@@ -1,0 +1,12 @@
+[package]
+name = "radiotap"
+version = "1.0.0"
+authors = ["Ross MacArthur <macarthur.ross@gmail.com>"]
+license = "Apache-2.0/MIT"
+
+[dependencies]
+byteorder = "1.2"
+quick-error = "1.2"
+
+[dev-dependencies]
+pcap = "0.7"
