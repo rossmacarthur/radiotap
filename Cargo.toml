@@ -3,6 +3,11 @@ name = "radiotap"
 version = "1.0.0"
 authors = ["Ross MacArthur <macarthur.ross@gmail.com>"]
 license = "Apache-2.0/MIT"
+description = "A parser for the Radiotap capture format. See http://www.radiotap.org."
+keywords = ["radiotap", "packet", "parsing", "wifi"]
+readme = "README.md"
+homepage = "https://github.com/rossmacarthur/radiotap"
+repository = "https://github.com/rossmacarthur/radiotap"
 
 [dependencies]
 byteorder = "1.2"
