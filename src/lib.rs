@@ -17,7 +17,7 @@
 //!     ];
 //!
 //!     let radiotap = Radiotap::from_bytes(&capture).unwrap();
-//!     println!("{:?}", radiotap);
+//!     println!("{:?}", radiotap.vht);
 //! }
 //!```
 //!
