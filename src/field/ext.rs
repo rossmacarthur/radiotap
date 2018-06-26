@@ -166,7 +166,7 @@ pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<
 }
 
 /// Flags describing the channel.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ChannelFlags {
     /// Turbo channel.
     pub turbo: bool,
@@ -187,7 +187,7 @@ pub struct ChannelFlags {
 }
 
 /// Extended flags describing the channel.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct XChannelFlags {
     /// Turbo channel.
     pub turbo: bool,
@@ -222,7 +222,7 @@ pub struct XChannelFlags {
 }
 
 /// Struct containing the bandwidth, sideband, and sideband index.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Bandwidth {
     /// The bandwidth in MHz.
     pub bandwidth: u8,
@@ -290,7 +290,7 @@ pub struct VHTUser {
 }
 
 /// The guard interval.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GuardInterval {
     /// 800 ns.
     Long,
@@ -299,7 +299,7 @@ pub enum GuardInterval {
 }
 
 /// Forward error correction type.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FEC {
     /// Binary convolutional coding.
     BCC,
@@ -308,14 +308,14 @@ pub enum FEC {
 }
 
 /// The HT format.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HTFormat {
     Mixed,
     Greenfield,
 }
 
 /// The time unit of the [Timestamp](../struct.Timestamp.html).
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TimeUnit {
     Milliseconds,
     Microseconds,
@@ -336,7 +336,7 @@ impl TimeUnit {
 }
 
 /// The sampling position of the [Timestamp](../struct.Timestamp.html).
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SamplingPosition {
     StartMPDU,
     StartPLCP,
