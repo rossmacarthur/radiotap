@@ -1,6 +1,6 @@
 [package]
 name = "radiotap"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Ross MacArthur <macarthur.ross@gmail.com>"]
 license = "Apache-2.0/MIT"
 description = "A parser for the Radiotap capture format. See http://www.radiotap.org."
