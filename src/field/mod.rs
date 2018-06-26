@@ -12,7 +12,7 @@ use {Error, Result};
 type OUI = [u8; 3];
 
 /// The type of Radiotap field.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Kind {
     TSFT,
     Flags,
@@ -132,7 +132,7 @@ where
 }
 
 /// The Radiotap header, contained in all Radiotap captures.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Header {
     /// The Radiotap version, only version 0 is supported.
     pub version: u8,
@@ -217,7 +217,7 @@ impl Field for Header {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct VendorNamespace {
     pub oui: OUI,
     pub sub_namespace: u8,
@@ -241,7 +241,7 @@ impl Field for VendorNamespace {
 
 /// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization Function timer when the
 /// first bit of the MPDU arrived at the MAC. For received frames only.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TSFT {
     pub value: u64,
 }
@@ -254,7 +254,7 @@ impl Field for TSFT {
 }
 
 /// Properties of transmitted and received frames.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Flags {
     /// The frame was sent/received during CFP.
     pub cfp: bool,
@@ -305,7 +305,7 @@ impl Field for Rate {
 }
 
 /// The transmitted or received frequency in MHz, including flags describing the channel.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Channel {
     /// The frequency in MHz.
     pub freq: u16,
@@ -333,7 +333,7 @@ impl Field for Channel {
 }
 
 /// The hop set and pattern for frequency-hopping radios.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FHSS {
     pub hopset: u8,
     pub pattern: u8,
@@ -350,7 +350,7 @@ impl Field for FHSS {
 
 /// RF signal power at the antenna in dBm. Indicates the RF signal power at the antenna, in
 /// decibels difference from 1mW.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaSignal {
     pub value: i8,
 }
@@ -364,7 +364,7 @@ impl Field for AntennaSignal {
 
 /// RF signal power at the antenna in dB. Indicates the RF signal power at the antenna, in decibels
 /// difference from an arbitrary, fixed reference.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaSignalDb {
     pub value: u8,
 }
@@ -378,7 +378,7 @@ impl Field for AntennaSignalDb {
 
 /// RF noise power at the antenna in dBm. Indicates the RF signal noise at the antenna, in decibels
 ///  difference from 1mW.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaNoise {
     pub value: i8,
 }
@@ -392,7 +392,7 @@ impl Field for AntennaNoise {
 
 /// RF noise power at the antenna in dB. Indicates the RF signal noise at the antenna, in decibels
 /// difference from an arbitrary, fixed reference.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaNoiseDb {
     pub value: u8,
 }
@@ -406,7 +406,7 @@ impl Field for AntennaNoiseDb {
 
 /// Quality of Barker code lock, unitless. Monotonically nondecreasing with "better" lock
 /// strength. Called "Signal Quality" in datasheets.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct LockQuality {
     pub value: u16,
 }
@@ -420,7 +420,7 @@ impl Field for LockQuality {
 
 /// Transmit power expressed as unitless distance from max power. 0 is max power.
 /// Monotonically nondecreasing with lower power levels.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxAttenuation {
     pub value: u16,
 }
@@ -433,7 +433,7 @@ impl Field for TxAttenuation {
 }
 
 /// Transmit power in dB. 0 is max power. Monotonically nondecreasing with lower power levels.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxAttenuationDb {
     pub value: u16,
 }
@@ -446,7 +446,7 @@ impl Field for TxAttenuationDb {
 }
 
 /// Transmit power in dBm. This is the absolute power level measured at the antenna port.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxPower {
     pub value: i8,
 }
@@ -459,7 +459,7 @@ impl Field for TxPower {
 }
 
 /// Indication of the transmit/receive antenna for this frame. The first antenna is antenna 0.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Antenna {
     pub value: u8,
 }
@@ -472,7 +472,7 @@ impl Field for Antenna {
 }
 
 /// Properties of received frames.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RxFlags {
     pub bad_plcp: bool,
 }
@@ -487,7 +487,7 @@ impl Field for RxFlags {
 }
 
 /// Properties of transmitted frames.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxFlags {
     /// Transmission failed due to excessive retries.
     pub fail: bool,
@@ -516,7 +516,7 @@ impl Field for TxFlags {
 }
 
 /// Number of RTS retries a transmitted frame used.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RTSRetries {
     pub value: u8,
 }
@@ -529,7 +529,7 @@ impl Field for RTSRetries {
 }
 
 /// Number of data retries a transmitted frame used.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct DataRetries {
     pub value: u8,
 }
@@ -542,7 +542,7 @@ impl Field for DataRetries {
 }
 
 /// Extended channel information.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct XChannel {
     /// The channel flags.
     pub flags: XChannelFlags,
@@ -822,7 +822,7 @@ impl Field for VHT {
 }
 
 /// The time the frame was transmitted or received.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Timestamp {
     /// The actual timestamp.
     pub timestamp: u64,
