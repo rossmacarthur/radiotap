@@ -1,12 +1,11 @@
 //! Radiotap field definitions and parsers.
 
+use bitops::BitOps;
 use byteorder::{ReadBytesExt, LE};
 use std::io::{Cursor, Read};
 pub mod ext;
-mod util;
 
 use field::ext::*;
-use field::util::*;
 use {Error, Result};
 
 type OUI = [u8; 3];
@@ -171,7 +170,7 @@ impl Field for Header {
 
             if !vendor_namespace {
                 for bit in 0..29 {
-                    if bit_is_set(present.into(), bit) {
+                    if present.is_bit_set(bit) {
                         match Kind::new(present_count * 32 + bit) {
                             Ok(kind) => {
                                 kinds.push(kind);
@@ -186,12 +185,12 @@ impl Field for Header {
             }
 
             // Need to move to radiotap namespace
-            if bit_is_set(present.into(), 29) {
+            if present.is_bit_set(29) {
                 present_count = 0;
                 vendor_namespace = false;
 
             // Need to move to vendor namespace
-            } else if bit_is_set(present.into(), 30) {
+            } else if present.is_bit_set(30) {
                 present_count = 0;
                 vendor_namespace = true;
                 // We'll figure out what namespace it is later, just use none
@@ -203,7 +202,7 @@ impl Field for Header {
             }
 
             // More present words do not exist
-            if !bit_is_set(present.into(), 31) {
+            if !present.is_bit_set(31) {
                 break;
             }
         }
@@ -278,14 +277,14 @@ impl Field for Flags {
     fn from_bytes(input: &[u8]) -> Result<Flags> {
         let flags = Cursor::new(input).read_u8()?;
         Ok(Flags {
-            cfp: flag_is_set(flags.into(), 0x01),
-            preamble: flag_is_set(flags.into(), 0x02),
-            wep: flag_is_set(flags.into(), 0x04),
-            fragmentation: flag_is_set(flags.into(), 0x08),
-            fcs: flag_is_set(flags.into(), 0x10),
-            data_pad: flag_is_set(flags.into(), 0x20),
-            bad_fcs: flag_is_set(flags.into(), 0x40),
-            sgi: flag_is_set(flags.into(), 0x80),
+            cfp: flags.is_flag_set(0x01),
+            preamble: flags.is_flag_set(0x02),
+            wep: flags.is_flag_set(0x04),
+            fragmentation: flags.is_flag_set(0x08),
+            fcs: flags.is_flag_set(0x10),
+            data_pad: flags.is_flag_set(0x20),
+            bad_fcs: flags.is_flag_set(0x40),
+            sgi: flags.is_flag_set(0x80),
         })
     }
 }
@@ -319,14 +318,14 @@ impl Field for Channel {
         let freq = cursor.read_u16::<LE>()?;
         let flags = cursor.read_u16::<LE>()?;
         let flags = ChannelFlags {
-            turbo: flag_is_set(flags.into(), 0x0010),
-            cck: flag_is_set(flags.into(), 0x0020),
-            ofdm: flag_is_set(flags.into(), 0x0040),
-            ghz2: flag_is_set(flags.into(), 0x0080),
-            ghz5: flag_is_set(flags.into(), 0x0100),
-            passive: flag_is_set(flags.into(), 0x0200),
-            dynamic: flag_is_set(flags.into(), 0x0400),
-            gfsk: flag_is_set(flags.into(), 0x0800),
+            turbo: flags.is_flag_set(0x0010),
+            cck: flags.is_flag_set(0x0020),
+            ofdm: flags.is_flag_set(0x0040),
+            ghz2: flags.is_flag_set(0x0080),
+            ghz5: flags.is_flag_set(0x0100),
+            passive: flags.is_flag_set(0x0200),
+            dynamic: flags.is_flag_set(0x0400),
+            gfsk: flags.is_flag_set(0x0800),
         };
         Ok(Channel { freq, flags })
     }
@@ -481,7 +480,7 @@ impl Field for RxFlags {
     fn from_bytes(input: &[u8]) -> Result<RxFlags> {
         let flags = Cursor::new(input).read_u16::<LE>()?;
         Ok(RxFlags {
-            bad_plcp: flag_is_set(flags.into(), 0x0002),
+            bad_plcp: flags.is_flag_set(0x0002),
         })
     }
 }
@@ -506,11 +505,11 @@ impl Field for TxFlags {
     fn from_bytes(input: &[u8]) -> Result<TxFlags> {
         let flags = Cursor::new(input).read_u8()?;
         Ok(TxFlags {
-            fail: flag_is_set(flags.into(), 0x0001),
-            cts: flag_is_set(flags.into(), 0x0002),
-            rts: flag_is_set(flags.into(), 0x0004),
-            no_ack: flag_is_set(flags.into(), 0x0008),
-            no_seq: flag_is_set(flags.into(), 0x0010),
+            fail: flags.is_flag_set(0x0001),
+            cts: flags.is_flag_set(0x0002),
+            rts: flags.is_flag_set(0x0004),
+            no_ack: flags.is_flag_set(0x0008),
+            no_seq: flags.is_flag_set(0x0010),
         })
     }
 }
@@ -563,21 +562,21 @@ impl Field for XChannel {
         let max_power = cursor.read_u8()?;
         Ok(XChannel {
             flags: XChannelFlags {
-                turbo: flag_is_set(flags.into(), 0x00000010),
-                cck: flag_is_set(flags.into(), 0x00000020),
-                ofdm: flag_is_set(flags.into(), 0x00000040),
-                ghz2: flag_is_set(flags.into(), 0x00000080),
-                ghz5: flag_is_set(flags.into(), 0x00000100),
-                passive: flag_is_set(flags.into(), 0x00000200),
-                dynamic: flag_is_set(flags.into(), 0x00000400),
-                gfsk: flag_is_set(flags.into(), 0x00000800),
-                gsm: flag_is_set(flags.into(), 0x00001000),
-                sturbo: flag_is_set(flags.into(), 0x00002000),
-                half: flag_is_set(flags.into(), 0x00004000),
-                quarter: flag_is_set(flags.into(), 0x00008000),
-                ht20: flag_is_set(flags.into(), 0x00010000),
-                ht40u: flag_is_set(flags.into(), 0x00020000),
-                ht40d: flag_is_set(flags.into(), 0x00040000),
+                turbo: flags.is_flag_set(0x00000010),
+                cck: flags.is_flag_set(0x00000020),
+                ofdm: flags.is_flag_set(0x00000040),
+                ghz2: flags.is_flag_set(0x00000080),
+                ghz5: flags.is_flag_set(0x00000100),
+                passive: flags.is_flag_set(0x00000200),
+                dynamic: flags.is_flag_set(0x00000400),
+                gfsk: flags.is_flag_set(0x00000800),
+                gsm: flags.is_flag_set(0x00001000),
+                sturbo: flags.is_flag_set(0x00002000),
+                half: flags.is_flag_set(0x00004000),
+                quarter: flags.is_flag_set(0x00008000),
+                ht20: flags.is_flag_set(0x00010000),
+                ht40u: flags.is_flag_set(0x00020000),
+                ht40d: flags.is_flag_set(0x00040000),
             },
             freq,
             channel,
@@ -619,40 +618,40 @@ impl Field for MCS {
         let flags = cursor.read_u8()?;
         let index = cursor.read_u8()?;
 
-        if flag_is_set(known.into(), 0x01) {
+        if known.is_flag_set(0x01) {
             mcs.bw = Some(Bandwidth::new(flags & 0x03)?)
         }
 
-        if flag_is_set(known.into(), 0x02) {
+        if known.is_flag_set(0x02) {
             mcs.index = Some(index);
         }
 
-        if flag_is_set(known.into(), 0x04) {
-            mcs.gi = Some(match flag_is_set(flags.into(), 0x04) {
+        if known.is_flag_set(0x04) {
+            mcs.gi = Some(match flags.is_flag_set(0x04) {
                 true => GuardInterval::Short,
                 false => GuardInterval::Long,
             })
         }
 
-        if flag_is_set(known.into(), 0x08) {
-            mcs.format = Some(match flag_is_set(flags.into(), 0x08) {
+        if known.is_flag_set(0x08) {
+            mcs.format = Some(match flags.is_flag_set(0x08) {
                 true => HTFormat::Greenfield,
                 false => HTFormat::Mixed,
             });
         }
 
-        if flag_is_set(known.into(), 0x10) {
-            mcs.fec = Some(match flag_is_set(flags.into(), 0x10) {
+        if known.is_flag_set(0x10) {
+            mcs.fec = Some(match flags.is_flag_set(0x10) {
                 true => FEC::LDPC,
                 false => FEC::BCC,
             });
         }
 
-        if flag_is_set(known.into(), 0x20) {
-            mcs.stbc = Some(bits_as_int(flags.into(), 5, 2) as u8);
+        if known.is_flag_set(0x20) {
+            mcs.stbc = Some(flags.bits_as_int(5, 2));
         }
 
-        if flag_is_set(known.into(), 0x40) {
+        if known.is_flag_set(0x40) {
             // Yes this is stored weirdly
             mcs.ness = Some(known & 0x80 >> 6 | flags & 0x80 >> 7)
         }
@@ -689,15 +688,15 @@ impl Field for AMPDUStatus {
         let flags = cursor.read_u16::<LE>()?;
         let delim_crc = cursor.read_u8()?;
 
-        if flag_is_set(flags.into(), 0x0001) {
-            ampdu.zero_length = Some(flag_is_set(flags.into(), 0x0002));
+        if flags.is_flag_set(0x0001) {
+            ampdu.zero_length = Some(flags.is_flag_set(0x0002));
         }
 
-        if flag_is_set(flags.into(), 0x0004) {
-            ampdu.last = Some(flag_is_set(flags.into(), 0x0008));
+        if flags.is_flag_set(0x0004) {
+            ampdu.last = Some(flags.is_flag_set(0x0008));
         }
 
-        if !flag_is_set(flags.into(), 0x0010) && flag_is_set(flags.into(), 0x0020) {
+        if !flags.is_flag_set(0x0010) && flags.is_flag_set(0x0020) {
             ampdu.delimiter_crc = Some(delim_crc);
         }
 
@@ -749,42 +748,42 @@ impl Field for VHT {
         let group_id = cursor.read_u8()?;
         let partial_aid = cursor.read_u16::<LE>()?;
 
-        if flag_is_set(known.into(), 0x0001) {
-            vht.stbc = Some(flag_is_set(flags.into(), 0x01));
+        if known.is_flag_set(0x0001) {
+            vht.stbc = Some(flags.is_flag_set(0x01));
         }
 
-        if flag_is_set(known.into(), 0x0002) {
-            vht.txop_ps = Some(flag_is_set(flags.into(), 0x02));
+        if known.is_flag_set(0x0002) {
+            vht.txop_ps = Some(flags.is_flag_set(0x02));
         }
 
-        if flag_is_set(known.into(), 0x0004) {
+        if known.is_flag_set(0x0004) {
             vht.gi = Some(match flags & 0x04 > 0 {
                 true => GuardInterval::Short,
                 false => GuardInterval::Long,
             })
         }
 
-        if flag_is_set(known.into(), 0x0008) {
-            vht.sgi_nsym_da = Some(flag_is_set(flags.into(), 0x08));
+        if known.is_flag_set(0x0008) {
+            vht.sgi_nsym_da = Some(flags.is_flag_set(0x08));
         }
 
-        if flag_is_set(known.into(), 0x0010) {
-            vht.ldpc_extra = Some(flag_is_set(flags.into(), 0x10));
+        if known.is_flag_set(0x0010) {
+            vht.ldpc_extra = Some(flags.is_flag_set(0x10));
         }
 
-        if flag_is_set(known.into(), 0x0020) {
-            vht.beamformed = Some(flag_is_set(flags.into(), 0x20));
+        if known.is_flag_set(0x0020) {
+            vht.beamformed = Some(flags.is_flag_set(0x20));
         }
 
-        if flag_is_set(known.into(), 0x0040) {
+        if known.is_flag_set(0x0040) {
             vht.bw = Some(Bandwidth::new(bandwidth & 0x1f)?)
         }
 
-        if flag_is_set(known.into(), 0x0080) {
+        if known.is_flag_set(0x0080) {
             vht.group_id = Some(group_id);
         }
 
-        if flag_is_set(known.into(), 0x0100) {
+        if known.is_flag_set(0x0100) {
             vht.partial_aid = Some(partial_aid);
         }
 
@@ -845,7 +844,7 @@ impl Field for Timestamp {
         let position = SamplingPosition::from(unit_position & 0xf0 >> 4)?;
         let flags = cursor.read_u8()?;
 
-        if !flag_is_set(flags.into(), 0x02) {
+        if !flags.is_flag_set(0x02) {
             accuracy = None;
         }
 

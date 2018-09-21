@@ -10,6 +10,7 @@ homepage = "https://github.com/rossmacarthur/radiotap"
 repository = "https://github.com/rossmacarthur/radiotap"
 
 [dependencies]
+bitops = "0.1"
 byteorder = "1.2"
 quick-error = "1.2"
 

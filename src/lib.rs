@@ -47,6 +47,7 @@
 //! }
 //! ```
 
+extern crate bitops;
 extern crate byteorder;
 #[macro_use]
 extern crate quick_error;
