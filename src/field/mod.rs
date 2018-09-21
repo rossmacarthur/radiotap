@@ -794,7 +794,7 @@ impl Field for VHT {
                 continue;
             }
 
-            let index = user & 0xf0 >> 4;
+            let index = (user & 0xf0) >> 4;
             let nsts = nss << (flags & 0x01);
             let id = i as u8;
 
