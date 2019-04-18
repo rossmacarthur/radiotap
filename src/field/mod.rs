@@ -72,8 +72,8 @@ impl Kind {
     }
 
     /// Returns the align value for the field.
-    pub fn align(&self) -> u64 {
-        match *self {
+    pub fn align(self) -> u64 {
+        match self {
             Kind::TSFT | Kind::Timestamp => 8,
             Kind::XChannel | Kind::AMPDUStatus => 4,
             Kind::Channel
@@ -90,8 +90,8 @@ impl Kind {
     }
 
     /// Returns the size of the field.
-    pub fn size(&self) -> usize {
-        match *self {
+    pub fn size(self) -> usize {
+        match self {
             Kind::VHT | Kind::Timestamp => 12,
             Kind::TSFT | Kind::AMPDUStatus | Kind::XChannel => 8,
             Kind::VendorNamespace(_) => 6,
@@ -227,7 +227,7 @@ impl Field for VendorNamespace {
     fn from_bytes(input: &[u8]) -> Result<VendorNamespace> {
         let mut cursor = Cursor::new(input);
         let mut oui = [0; 3];
-        cursor.read(&mut oui)?;
+        cursor.read_exact(&mut oui)?;
         let sub_namespace = cursor.read_u8()?;
         let skip_length = cursor.read_u16::<LE>()?;
         Ok(VendorNamespace {
@@ -301,7 +301,7 @@ pub struct Rate {
 
 impl Field for Rate {
     fn from_bytes(input: &[u8]) -> Result<Rate> {
-        let value = (Cursor::new(input).read_i8()? as f32) / 2.0;
+        let value = f32::from(Cursor::new(input).read_i8()?) / 2.0;
         Ok(Rate { value })
     }
 }
@@ -570,21 +570,21 @@ impl Field for XChannel {
         let max_power = cursor.read_u8()?;
         Ok(XChannel {
             flags: XChannelFlags {
-                turbo: flags.is_flag_set(0x00000010),
-                cck: flags.is_flag_set(0x00000020),
-                ofdm: flags.is_flag_set(0x00000040),
-                ghz2: flags.is_flag_set(0x00000080),
-                ghz5: flags.is_flag_set(0x00000100),
-                passive: flags.is_flag_set(0x00000200),
-                dynamic: flags.is_flag_set(0x00000400),
-                gfsk: flags.is_flag_set(0x00000800),
-                gsm: flags.is_flag_set(0x00001000),
-                sturbo: flags.is_flag_set(0x00002000),
-                half: flags.is_flag_set(0x00004000),
-                quarter: flags.is_flag_set(0x00008000),
-                ht20: flags.is_flag_set(0x00010000),
-                ht40u: flags.is_flag_set(0x00020000),
-                ht40d: flags.is_flag_set(0x00040000),
+                turbo: flags.is_flag_set(0x0000_0010),
+                cck: flags.is_flag_set(0x0000_0020),
+                ofdm: flags.is_flag_set(0x0000_0040),
+                ghz2: flags.is_flag_set(0x0000_0080),
+                ghz5: flags.is_flag_set(0x0000_0100),
+                passive: flags.is_flag_set(0x0000_0200),
+                dynamic: flags.is_flag_set(0x0000_0400),
+                gfsk: flags.is_flag_set(0x0000_0800),
+                gsm: flags.is_flag_set(0x0000_1000),
+                sturbo: flags.is_flag_set(0x0000_2000),
+                half: flags.is_flag_set(0x0000_4000),
+                quarter: flags.is_flag_set(0x0000_8000),
+                ht20: flags.is_flag_set(0x0001_0000),
+                ht40u: flags.is_flag_set(0x0002_0000),
+                ht40d: flags.is_flag_set(0x0004_0000),
             },
             freq,
             channel,
@@ -636,23 +636,26 @@ impl Field for MCS {
         }
 
         if known.is_flag_set(0x04) {
-            mcs.gi = Some(match flags.is_flag_set(0x04) {
-                true => GuardInterval::Short,
-                false => GuardInterval::Long,
+            mcs.gi = Some(if flags.is_flag_set(0x04) {
+                GuardInterval::Short
+            } else {
+                GuardInterval::Long
             })
         }
 
         if known.is_flag_set(0x08) {
-            mcs.format = Some(match flags.is_flag_set(0x08) {
-                true => HTFormat::Greenfield,
-                false => HTFormat::Mixed,
+            mcs.format = Some(if flags.is_flag_set(0x08) {
+                HTFormat::Greenfield
+            } else {
+                HTFormat::Mixed
             });
         }
 
         if known.is_flag_set(0x10) {
-            mcs.fec = Some(match flags.is_flag_set(0x10) {
-                true => FEC::LDPC,
-                false => FEC::BCC,
+            mcs.fec = Some(if flags.is_flag_set(0x10) {
+                FEC::LDPC
+            } else {
+                FEC::BCC
             });
         }
 
@@ -754,7 +757,7 @@ impl Field for VHT {
         let flags = cursor.read_u8()?;
         let bandwidth = cursor.read_u8()?;
         let mut mcs_nss = [0; 4];
-        cursor.read(&mut mcs_nss)?;
+        cursor.read_exact(&mut mcs_nss)?;
         let coding = cursor.read_u8()?;
         let group_id = cursor.read_u8()?;
         let partial_aid = cursor.read_u16::<LE>()?;
@@ -768,9 +771,10 @@ impl Field for VHT {
         }
 
         if known.is_flag_set(0x0004) {
-            vht.gi = Some(match flags & 0x04 > 0 {
-                true => GuardInterval::Short,
-                false => GuardInterval::Long,
+            vht.gi = Some(if flags & 0x04 > 0 {
+                GuardInterval::Short
+            } else {
+                GuardInterval::Long
             })
         }
 

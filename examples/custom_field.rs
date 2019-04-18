@@ -26,12 +26,9 @@ fn main() {
     ];
 
     for element in RadiotapIterator::from_bytes(&capture).unwrap() {
-        match element {
-            Ok((field::Kind::AntennaSignal, data)) => {
-                let signal: MyAntennaSignal = field::from_bytes(data).unwrap();
-                println!("{:?}", signal);
-            }
-            _ => {}
+        if let Ok((field::Kind::AntennaSignal, data)) = element {
+            let signal: MyAntennaSignal = field::from_bytes(data).unwrap();
+            println!("{:?}", signal);
         }
     }
 }
