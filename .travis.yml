@@ -1,0 +1,21 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+# install rustfmt (nightly only) and clippy
+before_script:
+  - cargo install --force cargo-ci
+  - cargo ci --only nightly rustup component add rustfmt
+  - cargo ci --skip nightly rustup component add clippy
+
+# the primary test script
+script:
+  - cargo ci clean --verbose
+  - cargo ci --only nightly fmt -- --check
+  - cargo ci --only nightly build
+  - cargo ci --skip nightly clippy --verbose --all --all-targets --all-features -- -D warnings
+  - cargo ci test --verbose --all --all-features
+  - cargo ci --only stable git diff --exit-code
