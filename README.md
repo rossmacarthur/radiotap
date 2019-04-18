@@ -70,5 +70,5 @@ See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more
 details.
 
 [crates]: https://crates.io/crates/radiotap
-[travis]: https://travis-ci.org/rossmacarthur/radiotap
 [docs]: https://docs.rs/radiotap
+[travis]: https://travis-ci.org/rossmacarthur/radiotap
