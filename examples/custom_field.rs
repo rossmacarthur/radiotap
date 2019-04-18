@@ -1,7 +1,6 @@
 //! This example demonstrates how to implement a custom Radiotap field parser by
 //! implementing the `field::Field` trait.
 
-extern crate radiotap;
 use radiotap::{field, Error, RadiotapIterator};
 
 /// Our custom Antenna Signal struct
