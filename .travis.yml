@@ -5,6 +5,12 @@ rust:
   - beta
   - nightly
 
+before_install:
+  - sudo apt-get install -y libpcap-dev
+addons:
+  apt:
+    update: true
+
 # install rustfmt (nightly only) and clippy
 before_script:
   - cargo install --force cargo-ci
