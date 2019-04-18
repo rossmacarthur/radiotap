@@ -17,7 +17,7 @@ or directly editing your `Cargo.toml`
 
 ```
 [dependencies]
-radiotap = "1.0.0"
+radiotap = "1"
 ```
 
 See the documentation [here](https://docs.rs/radiotap).
@@ -26,8 +26,8 @@ See the documentation [here](https://docs.rs/radiotap).
 
 See [examples/](examples/) for more.
 
-The `Radiotap::from_bytes(&capture)` constructor will parse all present fields into a Radiotap
-struct:
+The `Radiotap::from_bytes(&capture)` constructor will parse all present fields
+into a Radiotap struct:
 
 ```rust
 let capture = [
@@ -40,8 +40,8 @@ let radiotap = Radiotap::from_bytes(&capture).unwrap();
 println!("{:?}", radiotap.vht);
 ```
 
-If you just want to parse a few specific fields from the Radiotap capture you can create an
-iterator using `RadiotapIterator::from_bytes(&capture)`:
+If you just want to parse a few specific fields from the Radiotap capture you
+can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 
 ```rust
 let capture = [
@@ -63,5 +63,5 @@ for element in RadiotapIterator::from_bytes(&capture).unwrap() {
 
 ## License
 
-This project is dual licensed under the Apache 2.0 License and the MIT License. See the
-[LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files.
+This project is dual licensed under the Apache 2.0 License and the MIT License.
+See the [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files.

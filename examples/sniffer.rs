@@ -1,5 +1,5 @@
-//! This example opens a packet capture on the given interface, and prints out the Radiotap capture
-//! for the first 100 captured packets.
+//! This example opens a packet capture on the given interface, and prints out
+//! the Radiotap capture for the first 100 captured packets.
 
 extern crate pcap;
 extern crate radiotap;

@@ -1,12 +1,12 @@
 //! Radiotap field definitions and parsers.
 
+pub mod ext;
+
 use bitops::BitOps;
 use byteorder::{ReadBytesExt, LE};
 use std::io::{Cursor, Read};
-pub mod ext;
 
-use field::ext::*;
-use {Error, Result};
+use crate::{field::ext::*, Error, Result};
 
 type OUI = [u8; 3];
 
@@ -208,7 +208,7 @@ impl Field for Header {
         }
 
         Ok(Header {
-            version: version,
+            version,
             length: length as usize,
             size: cursor.position() as usize,
             present: kinds,
@@ -238,8 +238,9 @@ impl Field for VendorNamespace {
     }
 }
 
-/// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization Function timer when the
-/// first bit of the MPDU arrived at the MAC. For received frames only.
+/// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization
+/// Function timer when the first bit of the MPDU arrived at the MAC. For
+/// received frames only.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TSFT {
     pub value: u64,
@@ -265,7 +266,8 @@ pub struct Flags {
     pub fragmentation: bool,
     /// The frame includes FCS.
     pub fcs: bool,
-    /// The frame has padding between 802.11 header and payload (to 32-bit boundary).
+    /// The frame has padding between 802.11 header and payload (to 32-bit
+    /// boundary).
     pub data_pad: bool,
     /// The frame failed FCS check.
     pub bad_fcs: bool,
@@ -289,8 +291,9 @@ impl Field for Flags {
     }
 }
 
-/// The legacy data rate in Mbps. Usually only one of the [Rate](struct.Rate.html),
-/// [MCS](struct.MCS.html), and [VHT](struct.VHT.html) fields is present.
+/// The legacy data rate in Mbps. Usually only one of the
+/// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT](struct.VHT.html)
+/// fields is present.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rate {
     pub value: f32,
@@ -303,7 +306,8 @@ impl Field for Rate {
     }
 }
 
-/// The transmitted or received frequency in MHz, including flags describing the channel.
+/// The transmitted or received frequency in MHz, including flags describing the
+/// channel.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Channel {
     /// The frequency in MHz.
@@ -347,8 +351,8 @@ impl Field for FHSS {
     }
 }
 
-/// RF signal power at the antenna in dBm. Indicates the RF signal power at the antenna, in
-/// decibels difference from 1mW.
+/// RF signal power at the antenna in dBm. Indicates the RF signal power at the
+/// antenna, in decibels difference from 1mW.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaSignal {
     pub value: i8,
@@ -361,8 +365,8 @@ impl Field for AntennaSignal {
     }
 }
 
-/// RF signal power at the antenna in dB. Indicates the RF signal power at the antenna, in decibels
-/// difference from an arbitrary, fixed reference.
+/// RF signal power at the antenna in dB. Indicates the RF signal power at the
+/// antenna, in decibels difference from an arbitrary, fixed reference.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaSignalDb {
     pub value: u8,
@@ -375,8 +379,8 @@ impl Field for AntennaSignalDb {
     }
 }
 
-/// RF noise power at the antenna in dBm. Indicates the RF signal noise at the antenna, in decibels
-///  difference from 1mW.
+/// RF noise power at the antenna in dBm. Indicates the RF signal noise at the
+/// antenna, in decibels  difference from 1mW.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaNoise {
     pub value: i8,
@@ -389,8 +393,8 @@ impl Field for AntennaNoise {
     }
 }
 
-/// RF noise power at the antenna in dB. Indicates the RF signal noise at the antenna, in decibels
-/// difference from an arbitrary, fixed reference.
+/// RF noise power at the antenna in dB. Indicates the RF signal noise at the
+/// antenna, in decibels difference from an arbitrary, fixed reference.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct AntennaNoiseDb {
     pub value: u8,
@@ -403,8 +407,8 @@ impl Field for AntennaNoiseDb {
     }
 }
 
-/// Quality of Barker code lock, unitless. Monotonically nondecreasing with "better" lock
-/// strength. Called "Signal Quality" in datasheets.
+/// Quality of Barker code lock, unitless. Monotonically nondecreasing with
+/// "better" lock strength. Called "Signal Quality" in datasheets.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct LockQuality {
     pub value: u16,
@@ -417,8 +421,8 @@ impl Field for LockQuality {
     }
 }
 
-/// Transmit power expressed as unitless distance from max power. 0 is max power.
-/// Monotonically nondecreasing with lower power levels.
+/// Transmit power expressed as unitless distance from max power. 0 is max
+/// power. Monotonically nondecreasing with lower power levels.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxAttenuation {
     pub value: u16,
@@ -431,7 +435,8 @@ impl Field for TxAttenuation {
     }
 }
 
-/// Transmit power in dB. 0 is max power. Monotonically nondecreasing with lower power levels.
+/// Transmit power in dB. 0 is max power. Monotonically nondecreasing with lower
+/// power levels.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxAttenuationDb {
     pub value: u16,
@@ -444,7 +449,8 @@ impl Field for TxAttenuationDb {
     }
 }
 
-/// Transmit power in dBm. This is the absolute power level measured at the antenna port.
+/// Transmit power in dBm. This is the absolute power level measured at the
+/// antenna port.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TxPower {
     pub value: i8,
@@ -457,7 +463,8 @@ impl Field for TxPower {
     }
 }
 
-/// Indication of the transmit/receive antenna for this frame. The first antenna is antenna 0.
+/// Indication of the transmit/receive antenna for this frame. The first antenna
+/// is antenna 0.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Antenna {
     pub value: u8,
@@ -494,10 +501,11 @@ pub struct TxFlags {
     pub cts: bool,
     /// Transmission used RTS/CTS handshake.
     pub rts: bool,
-    /// Transmission shall not expect an ACK frame and not retry when no ACK is received.
+    /// Transmission shall not expect an ACK frame and not retry when no ACK is
+    /// received.
     pub no_ack: bool,
-    /// Transmission includes a pre-configured sequence number that should not be changed by the
-    /// driver's TX handlers.
+    /// Transmission includes a pre-configured sequence number that should not
+    /// be changed by the driver's TX handlers.
     pub no_seq: bool,
 }
 
@@ -585,8 +593,9 @@ impl Field for XChannel {
     }
 }
 
-/// The IEEE 802.11n data rate index. Usually only one of the [Rate](struct.Rate.html),
-/// [MCS](struct.MCS.html), and [VHT] fields is present.
+/// The IEEE 802.11n data rate index. Usually only one of the
+/// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT] fields is
+/// present.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct MCS {
     /// The bandwidth.
@@ -664,7 +673,8 @@ impl Field for MCS {
     }
 }
 
-/// The presence of this field indicates that the frame was received as part of an a-MPDU.
+/// The presence of this field indicates that the frame was received as part of
+/// an a-MPDU.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct AMPDUStatus {
     /// The A-MPDU reference number.
@@ -704,8 +714,9 @@ impl Field for AMPDUStatus {
     }
 }
 
-/// The IEEE 802.11ac data rate index. Usually only one of the [Rate](struct.Rate.html),
-/// [MCS](struct.MCS.html), and [VHT](struct.VHT.html) fields is present.
+/// The IEEE 802.11ac data rate index. Usually only one of the
+/// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT](struct.VHT.html)
+/// fields is present.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct VHT {
     /// Whether all spatial streams of all users have STBC.
@@ -716,8 +727,8 @@ pub struct VHT {
     pub gi: Option<GuardInterval>,
     /// False if NSYM mod 10 != 9 or short GI not used. True if NSYM mod 10 = 9.
     pub sgi_nsym_da: Option<bool>,
-    /// Whether one or more users are using LDPC and the encoding process resulted in extra OFDM
-    /// symbol(s).
+    /// Whether one or more users are using LDPC and the encoding process
+    /// resulted in extra OFDM symbol(s).
     pub ldpc_extra: Option<bool>,
     /// The frame was transmitted/received using beamforming.
     pub beamformed: Option<bool>,
@@ -725,8 +736,8 @@ pub struct VHT {
     pub bw: Option<Bandwidth>,
     /// The Group ID of the frame.
     pub group_id: Option<u8>,
-    /// A non-unique identifier of a STA to identify whether the transmissions are destined to a
-    /// STA or not, used in conjunction with GroupID.
+    /// A non-unique identifier of a STA to identify whether the transmissions
+    /// are destined to a STA or not, used in conjunction with GroupID.
     pub partial_aid: Option<u16>,
     /// The users for the current group.
     pub users: [Option<VHTUser>; 4],

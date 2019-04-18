@@ -1,6 +1,6 @@
 //! Extended Radiotap field definitions and parsers.
 
-use {Error, Result};
+use crate::{Error, Result};
 
 const HT_RATE: [[f32; 4]; 32] = [
     // 20 MHz LGI,20 MHz SGI,40 MHZ LGI,40 MHz SGI
@@ -122,7 +122,8 @@ const VHT_RATE: [[f32; 8]; 80] = [
     [-1.0, -1.0, -1.0, -1.0, 3120.0, 3466.7, 6240.0, 6933.3],
 ];
 
-/// Returns the 802.11n data rate based on the MCS index, bandwidth, and guard interval.
+/// Returns the 802.11n data rate based on the MCS index, bandwidth, and guard
+/// interval.
 pub fn ht_rate(index: u8, bw: Bandwidth, gi: GuardInterval) -> Result<f32> {
     if index > 31 {
         return Err(Error::InvalidFormat);
@@ -139,8 +140,8 @@ pub fn ht_rate(index: u8, bw: Bandwidth, gi: GuardInterval) -> Result<f32> {
     Ok(HT_RATE[index as usize][col])
 }
 
-/// Returns the 802.11ac data rate based on the MCS index, bandwidth, guard interval, and number
-/// of spatial streams.
+/// Returns the 802.11ac data rate based on the MCS index, bandwidth, guard
+/// interval, and number of spatial streams.
 pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<f32> {
     if index > 9 || nss > 8 {
         return Err(Error::InvalidFormat);
@@ -273,8 +274,8 @@ impl Bandwidth {
     }
 }
 
-/// Represents a [VHT](../struct.VHT.html) user, the [VHT](../struct.VHT.html) encodes the MCS and
-/// NSS for up to four users.
+/// Represents a [VHT](../struct.VHT.html) user, the [VHT](../struct.VHT.html)
+/// encodes the MCS and NSS for up to four users.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct VHTUser {
     /// The 802.11ac MCS index.
