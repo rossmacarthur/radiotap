@@ -1,8 +1,6 @@
 //! This example opens a packet capture on the given interface, and prints out
 //! the Radiotap capture for the first 100 captured packets.
 
-extern crate pcap;
-extern crate radiotap;
 use std::env;
 
 fn main() {
@@ -10,7 +8,12 @@ fn main() {
     let device = if let Some(arg) = env::args().nth(1) {
         arg
     } else {
-        "en0".to_owned()
+        if cfg!(target_os = "macos") {
+            "en0"
+        } else {
+            "wlan0"
+        }
+        .to_string()
     };
 
     // Open packet capture and set data link to 802.11 Radiotap
