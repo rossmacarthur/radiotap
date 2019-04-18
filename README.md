@@ -1,7 +1,8 @@
 # radiotap
 
-[![crates.io](https://img.shields.io/crates/v/radiotap.svg)](https://crates.io/crates/radiotap)
-[![docs.rs](https://docs.rs/radiotap/badge.svg)](https://docs.rs/radiotap)
+[![Crates.io Version](https://img.shields.io/crates/v/radiotap.svg?style=flat-square&color=blue)][crates]
+[![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-blue.svg?style=flat-square)][docs]
+[![Build Status](https://img.shields.io/travis/rossmacarthur/radiotap/master.svg?style=flat-square)][travis]
 
 A parser for the [Radiotap](http://www.radiotap.org/) capture format.
 
@@ -9,13 +10,13 @@ A parser for the [Radiotap](http://www.radiotap.org/) capture format.
 
 Add to your project with
 
-```
+```bash
 cargo add radiotap
 ```
 
 or directly editing your `Cargo.toml`
 
-```
+```toml
 [dependencies]
 radiotap = "1"
 ```
@@ -64,4 +65,10 @@ for element in RadiotapIterator::from_bytes(&capture).unwrap() {
 ## License
 
 This project is dual licensed under the Apache 2.0 License and the MIT License.
-See the [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) files.
+
+See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more
+details.
+
+[crates]: https://crates.io/crates/radiotap
+[docs]: https://docs.rs/radiotap
+[travis]: https://travis-ci.org/rossmacarthur/radiotap
