@@ -1,7 +1,7 @@
 # radiotap
 
 [![Crates.io Version](https://img.shields.io/crates/v/radiotap.svg?style=flat-square&color=blue)][crates]
-[![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-brightgreen.svg?style=flat-square&color=blue)][docs]
+[![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-blue.svg?style=flat-square)][docs]
 [![Build Status](https://img.shields.io/travis/rossmacarthur/radiotap/master.svg?style=flat-square)][travis]
 
 A parser for the [Radiotap](http://www.radiotap.org/) capture format.
