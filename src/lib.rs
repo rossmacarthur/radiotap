@@ -2,37 +2,35 @@
 //!
 //! # Usage
 //!
-//! The `Radiotap::from_bytes(&capture)` constructor will parse all present fields into a
-//! [Radiotap](struct.Radiotap.html) struct:
+//! The `Radiotap::from_bytes(&capture)` constructor will parse all present
+//! fields into a [Radiotap](struct.Radiotap.html) struct:
 //!
 //! ```
-//! extern crate radiotap;
-//! use radiotap::{Radiotap};
+//! use radiotap::Radiotap;
 //!
 //! fn main() {
 //!     let capture = [
 //!         0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
 //!         166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!         4, 115, 0, 0, 0, 1, 63, 0, 0
+//!         4, 115, 0, 0, 0, 1, 63, 0, 0,
 //!     ];
 //!
 //!     let radiotap = Radiotap::from_bytes(&capture).unwrap();
 //!     println!("{:?}", radiotap.vht);
 //! }
-//!```
+//! ```
 //!
-//! If you just want to parse a few specific fields from the Radiotap capture you can create an
-//! iterator using `RadiotapIterator::from_bytes(&capture)`:
+//! If you just want to parse a few specific fields from the Radiotap capture
+//! you can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 //!
 //! ```
-//! extern crate radiotap;
-//! use radiotap::{RadiotapIterator, field};
+//! use radiotap::{field, RadiotapIterator};
 //!
 //! fn main() {
 //!     let capture = [
 //!         0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
 //!         166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!         4, 115, 0, 0, 0, 1, 63, 0, 0
+//!         4, 115, 0, 0, 0, 1, 63, 0, 0,
 //!     ];
 //!
 //!     for element in RadiotapIterator::from_bytes(&capture).unwrap() {
@@ -40,22 +38,20 @@
 //!             Ok((field::Kind::VHT, data)) => {
 //!                 let vht: field::VHT = field::from_bytes(data).unwrap();
 //!                 println!("{:?}", vht);
-//!             },
+//!             }
 //!             _ => {}
 //!         }
 //!     }
 //! }
 //! ```
 
-extern crate bitops;
-extern crate byteorder;
-#[macro_use]
-extern crate quick_error;
 pub mod field;
 
-use field::*;
-use std::io::Cursor;
-use std::result;
+use std::{io::Cursor, result};
+
+use quick_error::quick_error;
+
+use crate::field::*;
 
 quick_error! {
     /// All errors returned and used by the radiotap module.
@@ -64,6 +60,7 @@ quick_error! {
         /// The internal cursor on the data returned an IO error.
         ParseError(err: std::io::Error) {
             from()
+            source(err)
             description(err.description())
         }
         /// The given data is not a complete Radiotap capture.
@@ -105,7 +102,8 @@ impl<T> Align for Cursor<T> {
     }
 }
 
-/// Represents an unparsed Radiotap capture format, only the header field is parsed.
+/// Represents an unparsed Radiotap capture format, only the header field is
+/// parsed.
 #[derive(Debug, Clone)]
 pub struct RadiotapIterator<'a> {
     header: Header,
@@ -133,8 +131,8 @@ pub struct RadiotapIteratorIntoIter<'a> {
 }
 
 impl<'a> IntoIterator for &'a RadiotapIterator<'a> {
-    type Item = Result<(Kind, &'a [u8])>;
     type IntoIter = RadiotapIteratorIntoIter<'a>;
+    type Item = Result<(Kind, &'a [u8])>;
 
     fn into_iter(self) -> Self::IntoIter {
         let present = self.header.present.iter().rev().cloned().collect();
@@ -145,8 +143,8 @@ impl<'a> IntoIterator for &'a RadiotapIterator<'a> {
 }
 
 impl<'a> IntoIterator for RadiotapIterator<'a> {
-    type Item = Result<(Kind, &'a [u8])>;
     type IntoIter = RadiotapIteratorIntoIter<'a>;
+    type Item = Result<(Kind, &'a [u8])>;
 
     fn into_iter(self) -> Self::IntoIter {
         let present = self.header.present.iter().rev().cloned().collect();
@@ -205,8 +203,8 @@ impl Default for Header {
     }
 }
 
-/// Represents a parsed Radiotap capture, including the parsed header and all fields as Option
-/// members.
+/// Represents a parsed Radiotap capture, including the parsed header and all
+/// fields as Option members.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Radiotap {
     pub header: Header,
@@ -236,13 +234,14 @@ pub struct Radiotap {
 }
 
 impl Radiotap {
-    /// Returns the parsed [Radiotap](struct.Radiotap.html) from an input byte array.
+    /// Returns the parsed [Radiotap](struct.Radiotap.html) from an input byte
+    /// array.
     pub fn from_bytes(input: &[u8]) -> Result<Radiotap> {
         Ok(Radiotap::parse(input)?.0)
     }
 
-    /// Returns the parsed [Radiotap](struct.Radiotap.html) and remaining data from an input byte
-    /// array.
+    /// Returns the parsed [Radiotap](struct.Radiotap.html) and remaining data
+    /// from an input byte array.
     pub fn parse(input: &[u8]) -> Result<(Radiotap, &[u8])> {
         let (iterator, rest) = RadiotapIterator::parse(input)?;
 
