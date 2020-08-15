@@ -208,11 +208,11 @@ impl Default for Header {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Radiotap {
     pub header: Header,
-    pub tsft: Option<TSFT>,
+    pub tsft: Option<Tsft>,
     pub flags: Option<Flags>,
     pub rate: Option<Rate>,
     pub channel: Option<Channel>,
-    pub fhss: Option<FHSS>,
+    pub fhss: Option<Fhss>,
     pub antenna_signal: Option<AntennaSignal>,
     pub antenna_noise: Option<AntennaNoise>,
     pub lock_quality: Option<LockQuality>,
@@ -224,12 +224,12 @@ pub struct Radiotap {
     pub antenna_noise_db: Option<AntennaNoiseDb>,
     pub rx_flags: Option<RxFlags>,
     pub tx_flags: Option<TxFlags>,
-    pub rts_retries: Option<RTSRetries>,
+    pub rts_retries: Option<RtsRetries>,
     pub data_retries: Option<DataRetries>,
     pub xchannel: Option<XChannel>,
-    pub mcs: Option<MCS>,
-    pub ampdu_status: Option<AMPDUStatus>,
-    pub vht: Option<VHT>,
+    pub mcs: Option<Mcs>,
+    pub ampdu_status: Option<AmpduStatus>,
+    pub vht: Option<Vht>,
     pub timestamp: Option<Timestamp>,
 }
 
@@ -254,11 +254,11 @@ impl Radiotap {
             let (field_kind, data) = result?;
 
             match field_kind {
-                Kind::TSFT => radiotap.tsft = from_bytes_some(data)?,
+                Kind::Tsft => radiotap.tsft = from_bytes_some(data)?,
                 Kind::Flags => radiotap.flags = from_bytes_some(data)?,
                 Kind::Rate => radiotap.rate = from_bytes_some(data)?,
                 Kind::Channel => radiotap.channel = from_bytes_some(data)?,
-                Kind::FHSS => radiotap.fhss = from_bytes_some(data)?,
+                Kind::Fhss => radiotap.fhss = from_bytes_some(data)?,
                 Kind::AntennaSignal => radiotap.antenna_signal = from_bytes_some(data)?,
                 Kind::AntennaNoise => radiotap.antenna_noise = from_bytes_some(data)?,
                 Kind::LockQuality => radiotap.lock_quality = from_bytes_some(data)?,
@@ -270,12 +270,12 @@ impl Radiotap {
                 Kind::AntennaNoiseDb => radiotap.antenna_noise_db = from_bytes_some(data)?,
                 Kind::RxFlags => radiotap.rx_flags = from_bytes_some(data)?,
                 Kind::TxFlags => radiotap.tx_flags = from_bytes_some(data)?,
-                Kind::RTSRetries => radiotap.rts_retries = from_bytes_some(data)?,
+                Kind::RtsRetries => radiotap.rts_retries = from_bytes_some(data)?,
                 Kind::DataRetries => radiotap.data_retries = from_bytes_some(data)?,
                 Kind::XChannel => radiotap.xchannel = from_bytes_some(data)?,
-                Kind::MCS => radiotap.mcs = from_bytes_some(data)?,
-                Kind::AMPDUStatus => radiotap.ampdu_status = from_bytes_some(data)?,
-                Kind::VHT => radiotap.vht = from_bytes_some(data)?,
+                Kind::Mcs => radiotap.mcs = from_bytes_some(data)?,
+                Kind::AmpduStatus => radiotap.ampdu_status = from_bytes_some(data)?,
+                Kind::Vht => radiotap.vht = from_bytes_some(data)?,
                 Kind::Timestamp => radiotap.timestamp = from_bytes_some(data)?,
                 _ => {}
             }

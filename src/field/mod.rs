@@ -8,16 +8,16 @@ use std::io::{Cursor, Read};
 
 use crate::{field::ext::*, Error, Result};
 
-type OUI = [u8; 3];
+type Oui = [u8; 3];
 
 /// The type of Radiotap field.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Kind {
-    TSFT,
+    Tsft,
     Flags,
     Rate,
     Channel,
-    FHSS,
+    Fhss,
     AntennaSignal,
     AntennaNoise,
     LockQuality,
@@ -29,12 +29,12 @@ pub enum Kind {
     AntennaNoiseDb,
     RxFlags,
     TxFlags,
-    RTSRetries,
+    RtsRetries,
     DataRetries,
     XChannel,
-    MCS,
-    AMPDUStatus,
-    VHT,
+    Mcs,
+    AmpduStatus,
+    Vht,
     Timestamp,
     VendorNamespace(Option<VendorNamespace>),
 }
@@ -42,11 +42,11 @@ pub enum Kind {
 impl Kind {
     pub fn new(value: u8) -> Result<Kind> {
         Ok(match value {
-            0 => Kind::TSFT,
+            0 => Kind::Tsft,
             1 => Kind::Flags,
             2 => Kind::Rate,
             3 => Kind::Channel,
-            4 => Kind::FHSS,
+            4 => Kind::Fhss,
             5 => Kind::AntennaSignal,
             6 => Kind::AntennaNoise,
             7 => Kind::LockQuality,
@@ -58,12 +58,12 @@ impl Kind {
             13 => Kind::AntennaNoiseDb,
             14 => Kind::RxFlags,
             15 => Kind::TxFlags,
-            16 => Kind::RTSRetries,
+            16 => Kind::RtsRetries,
             17 => Kind::DataRetries,
             18 => Kind::XChannel,
-            19 => Kind::MCS,
-            20 => Kind::AMPDUStatus,
-            21 => Kind::VHT,
+            19 => Kind::Mcs,
+            20 => Kind::AmpduStatus,
+            21 => Kind::Vht,
             22 => Kind::Timestamp,
             _ => {
                 return Err(Error::UnsupportedField);
@@ -74,16 +74,16 @@ impl Kind {
     /// Returns the align value for the field.
     pub fn align(self) -> u64 {
         match self {
-            Kind::TSFT | Kind::Timestamp => 8,
-            Kind::XChannel | Kind::AMPDUStatus => 4,
+            Kind::Tsft | Kind::Timestamp => 8,
+            Kind::XChannel | Kind::AmpduStatus => 4,
             Kind::Channel
-            | Kind::FHSS
+            | Kind::Fhss
             | Kind::LockQuality
             | Kind::TxAttenuation
             | Kind::TxAttenuationDb
             | Kind::RxFlags
             | Kind::TxFlags
-            | Kind::VHT
+            | Kind::Vht
             | Kind::VendorNamespace(_) => 2,
             _ => 1,
         }
@@ -92,12 +92,12 @@ impl Kind {
     /// Returns the size of the field.
     pub fn size(self) -> usize {
         match self {
-            Kind::VHT | Kind::Timestamp => 12,
-            Kind::TSFT | Kind::AMPDUStatus | Kind::XChannel => 8,
+            Kind::Vht | Kind::Timestamp => 12,
+            Kind::Tsft | Kind::AmpduStatus | Kind::XChannel => 8,
             Kind::VendorNamespace(_) => 6,
             Kind::Channel => 4,
-            Kind::MCS => 3,
-            Kind::FHSS
+            Kind::Mcs => 3,
+            Kind::Fhss
             | Kind::LockQuality
             | Kind::TxAttenuation
             | Kind::TxAttenuationDb
@@ -218,7 +218,7 @@ impl Field for Header {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct VendorNamespace {
-    pub oui: OUI,
+    pub oui: Oui,
     pub sub_namespace: u8,
     pub skip_length: u16,
 }
@@ -242,14 +242,14 @@ impl Field for VendorNamespace {
 /// Function timer when the first bit of the MPDU arrived at the MAC. For
 /// received frames only.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct TSFT {
+pub struct Tsft {
     pub value: u64,
 }
 
-impl Field for TSFT {
-    fn from_bytes(input: &[u8]) -> Result<TSFT> {
+impl Field for Tsft {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u64::<LE>()?;
-        Ok(TSFT { value })
+        Ok(Self { value })
     }
 }
 
@@ -276,9 +276,9 @@ pub struct Flags {
 }
 
 impl Field for Flags {
-    fn from_bytes(input: &[u8]) -> Result<Flags> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u8()?;
-        Ok(Flags {
+        Ok(Self {
             cfp: flags.is_flag_set(0x01),
             preamble: flags.is_flag_set(0x02),
             wep: flags.is_flag_set(0x04),
@@ -300,9 +300,9 @@ pub struct Rate {
 }
 
 impl Field for Rate {
-    fn from_bytes(input: &[u8]) -> Result<Rate> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = f32::from(Cursor::new(input).read_i8()?) / 2.0;
-        Ok(Rate { value })
+        Ok(Self { value })
     }
 }
 
@@ -317,7 +317,7 @@ pub struct Channel {
 }
 
 impl Field for Channel {
-    fn from_bytes(input: &[u8]) -> Result<Channel> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let freq = cursor.read_u16::<LE>()?;
         let flags = cursor.read_u16::<LE>()?;
@@ -331,23 +331,23 @@ impl Field for Channel {
             dynamic: flags.is_flag_set(0x0400),
             gfsk: flags.is_flag_set(0x0800),
         };
-        Ok(Channel { freq, flags })
+        Ok(Self { freq, flags })
     }
 }
 
 /// The hop set and pattern for frequency-hopping radios.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct FHSS {
+pub struct Fhss {
     pub hopset: u8,
     pub pattern: u8,
 }
 
-impl Field for FHSS {
-    fn from_bytes(input: &[u8]) -> Result<FHSS> {
+impl Field for Fhss {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let hopset = cursor.read_u8()?;
         let pattern = cursor.read_u8()?;
-        Ok(FHSS { hopset, pattern })
+        Ok(Self { hopset, pattern })
     }
 }
 
@@ -359,9 +359,9 @@ pub struct AntennaSignal {
 }
 
 impl Field for AntennaSignal {
-    fn from_bytes(input: &[u8]) -> Result<AntennaSignal> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
-        Ok(AntennaSignal { value })
+        Ok(Self { value })
     }
 }
 
@@ -373,9 +373,9 @@ pub struct AntennaSignalDb {
 }
 
 impl Field for AntennaSignalDb {
-    fn from_bytes(input: &[u8]) -> Result<AntennaSignalDb> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
-        Ok(AntennaSignalDb { value })
+        Ok(Self { value })
     }
 }
 
@@ -387,9 +387,9 @@ pub struct AntennaNoise {
 }
 
 impl Field for AntennaNoise {
-    fn from_bytes(input: &[u8]) -> Result<AntennaNoise> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
-        Ok(AntennaNoise { value })
+        Ok(Self { value })
     }
 }
 
@@ -401,9 +401,9 @@ pub struct AntennaNoiseDb {
 }
 
 impl Field for AntennaNoiseDb {
-    fn from_bytes(input: &[u8]) -> Result<AntennaNoiseDb> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
-        Ok(AntennaNoiseDb { value })
+        Ok(Self { value })
     }
 }
 
@@ -415,9 +415,9 @@ pub struct LockQuality {
 }
 
 impl Field for LockQuality {
-    fn from_bytes(input: &[u8]) -> Result<LockQuality> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
-        Ok(LockQuality { value })
+        Ok(Self { value })
     }
 }
 
@@ -429,9 +429,9 @@ pub struct TxAttenuation {
 }
 
 impl Field for TxAttenuation {
-    fn from_bytes(input: &[u8]) -> Result<TxAttenuation> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
-        Ok(TxAttenuation { value })
+        Ok(Self { value })
     }
 }
 
@@ -443,9 +443,9 @@ pub struct TxAttenuationDb {
 }
 
 impl Field for TxAttenuationDb {
-    fn from_bytes(input: &[u8]) -> Result<TxAttenuationDb> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
-        Ok(TxAttenuationDb { value })
+        Ok(Self { value })
     }
 }
 
@@ -457,9 +457,9 @@ pub struct TxPower {
 }
 
 impl Field for TxPower {
-    fn from_bytes(input: &[u8]) -> Result<TxPower> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
-        Ok(TxPower { value })
+        Ok(Self { value })
     }
 }
 
@@ -484,9 +484,9 @@ pub struct RxFlags {
 }
 
 impl Field for RxFlags {
-    fn from_bytes(input: &[u8]) -> Result<RxFlags> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u16::<LE>()?;
-        Ok(RxFlags {
+        Ok(Self {
             bad_plcp: flags.is_flag_set(0x0002),
         })
     }
@@ -510,9 +510,9 @@ pub struct TxFlags {
 }
 
 impl Field for TxFlags {
-    fn from_bytes(input: &[u8]) -> Result<TxFlags> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u8()?;
-        Ok(TxFlags {
+        Ok(Self {
             fail: flags.is_flag_set(0x0001),
             cts: flags.is_flag_set(0x0002),
             rts: flags.is_flag_set(0x0004),
@@ -524,14 +524,14 @@ impl Field for TxFlags {
 
 /// Number of RTS retries a transmitted frame used.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct RTSRetries {
+pub struct RtsRetries {
     pub value: u8,
 }
 
-impl Field for RTSRetries {
-    fn from_bytes(input: &[u8]) -> Result<RTSRetries> {
+impl Field for RtsRetries {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
-        Ok(RTSRetries { value })
+        Ok(Self { value })
     }
 }
 
@@ -542,9 +542,9 @@ pub struct DataRetries {
 }
 
 impl Field for DataRetries {
-    fn from_bytes(input: &[u8]) -> Result<DataRetries> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
-        Ok(DataRetries { value })
+        Ok(Self { value })
     }
 }
 
@@ -562,13 +562,13 @@ pub struct XChannel {
 }
 
 impl Field for XChannel {
-    fn from_bytes(input: &[u8]) -> Result<XChannel> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let flags = cursor.read_u32::<LE>()?;
         let freq = cursor.read_u16::<LE>()?;
         let channel = cursor.read_u8()?;
         let max_power = cursor.read_u8()?;
-        Ok(XChannel {
+        Ok(Self {
             flags: XChannelFlags {
                 turbo: flags.is_flag_set(0x0000_0010),
                 cck: flags.is_flag_set(0x0000_0020),
@@ -597,7 +597,7 @@ impl Field for XChannel {
 /// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT] fields is
 /// present.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct MCS {
+pub struct Mcs {
     /// The bandwidth.
     pub bw: Option<Bandwidth>,
     /// The 802.11n MCS index.
@@ -616,12 +616,10 @@ pub struct MCS {
     pub datarate: Option<f32>,
 }
 
-impl Field for MCS {
-    fn from_bytes(input: &[u8]) -> Result<MCS> {
+impl Field for Mcs {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
-        let mut mcs = MCS {
-            ..Default::default()
-        };
+        let mut mcs = Self::default();
 
         let known = cursor.read_u8()?;
         let flags = cursor.read_u8()?;
@@ -679,7 +677,7 @@ impl Field for MCS {
 /// The presence of this field indicates that the frame was received as part of
 /// an a-MPDU.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct AMPDUStatus {
+pub struct AmpduStatus {
     /// The A-MPDU reference number.
     pub reference: u32,
     /// Whether this is a 0-length subframe.
@@ -690,12 +688,10 @@ pub struct AMPDUStatus {
     pub delimiter_crc: Option<u8>,
 }
 
-impl Field for AMPDUStatus {
-    fn from_bytes(input: &[u8]) -> Result<AMPDUStatus> {
+impl Field for AmpduStatus {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
-        let mut ampdu = AMPDUStatus {
-            ..Default::default()
-        };
+        let mut ampdu = Self::default();
 
         ampdu.reference = cursor.read_u32::<LE>()?;
         let flags = cursor.read_u16::<LE>()?;
@@ -721,7 +717,7 @@ impl Field for AMPDUStatus {
 /// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT](struct.VHT.html)
 /// fields is present.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct VHT {
+pub struct Vht {
     /// Whether all spatial streams of all users have STBC.
     pub stbc: Option<bool>,
     /// Whether STAs may not doze during TXOP or transmitter is non-AP.
@@ -746,12 +742,10 @@ pub struct VHT {
     pub users: [Option<VHTUser>; 4],
 }
 
-impl Field for VHT {
-    fn from_bytes(input: &[u8]) -> Result<VHT> {
+impl Field for Vht {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
-        let mut vht = VHT {
-            ..Default::default()
-        };
+        let mut vht = Self::default();
 
         let known = cursor.read_u16::<LE>()?;
         let flags = cursor.read_u8()?;
