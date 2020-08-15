@@ -6,41 +6,35 @@
 //! fields into a [Radiotap](struct.Radiotap.html) struct:
 //!
 //! ```
-//! use radiotap::Radiotap;
+//! # use radiotap::Radiotap;
+//! let capture = [
+//!     0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
+//!     166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
+//!     4, 115, 0, 0, 0, 1, 63, 0, 0,
+//! ];
 //!
-//! fn main() {
-//!     let capture = [
-//!         0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-//!         166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!         4, 115, 0, 0, 0, 1, 63, 0, 0,
-//!     ];
-//!
-//!     let radiotap = Radiotap::from_bytes(&capture).unwrap();
-//!     println!("{:?}", radiotap.vht);
-//! }
+//! let radiotap = Radiotap::from_bytes(&capture).unwrap();
+//! println!("{:?}", radiotap.vht);
 //! ```
 //!
 //! If you just want to parse a few specific fields from the Radiotap capture
 //! you can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 //!
 //! ```
-//! use radiotap::{field, RadiotapIterator};
+//! # use radiotap::{field, RadiotapIterator};
+//! let capture = [
+//!     0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
+//!     166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
+//!     4, 115, 0, 0, 0, 1, 63, 0, 0,
+//! ];
 //!
-//! fn main() {
-//!     let capture = [
-//!         0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-//!         166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!         4, 115, 0, 0, 0, 1, 63, 0, 0,
-//!     ];
-//!
-//!     for element in RadiotapIterator::from_bytes(&capture).unwrap() {
-//!         match element {
-//!             Ok((field::Kind::VHT, data)) => {
-//!                 let vht: field::VHT = field::from_bytes(data).unwrap();
-//!                 println!("{:?}", vht);
-//!             }
-//!             _ => {}
+//! for element in RadiotapIterator::from_bytes(&capture).unwrap() {
+//!     match element {
+//!         Ok((field::Kind::Vht, data)) => {
+//!             let vht: field::Vht = field::from_bytes(data).unwrap();
+//!             println!("{:?}", vht);
 //!         }
+//!         _ => {}
 //!     }
 //! }
 //! ```
