@@ -281,7 +281,7 @@ pub struct VHTUser {
     /// The 802.11ac MCS index.
     pub index: u8,
     /// The FEC type.
-    pub fec: FEC,
+    pub fec: Fec,
     /// Number of spatial streams (range 1 - 8).
     pub nss: u8,
     /// Number of space-time streams (range 1 - 16).
@@ -301,16 +301,16 @@ pub enum GuardInterval {
 
 /// Forward error correction type.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum FEC {
+pub enum Fec {
     /// Binary convolutional coding.
-    BCC,
+    Bcc,
     /// Low-density parity-check.
-    LDPC,
+    Ldpc,
 }
 
 /// The HT format.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum HTFormat {
+pub enum HtFormat {
     Mixed,
     Greenfield,
 }
@@ -318,17 +318,17 @@ pub enum HTFormat {
 /// The time unit of the [Timestamp](../struct.Timestamp.html).
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TimeUnit {
-    Milliseconds,
-    Microseconds,
-    Nanoseconds,
+    Millis,
+    Micros,
+    Nanos,
 }
 
 impl TimeUnit {
     pub fn new(value: u8) -> Result<Self> {
         Ok(match value {
-            0 => Self::Milliseconds,
-            1 => Self::Microseconds,
-            2 => Self::Nanoseconds,
+            0 => Self::Millis,
+            1 => Self::Micros,
+            2 => Self::Nanos,
             _ => {
                 return Err(Error::InvalidFormat);
             }
@@ -339,20 +339,20 @@ impl TimeUnit {
 /// The sampling position of the [Timestamp](../struct.Timestamp.html).
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SamplingPosition {
-    StartMPDU,
-    StartPLCP,
-    EndPPDU,
-    EndMPDU,
+    StartMpdu,
+    StartPlcp,
+    EndPpdu,
+    EndMpdu,
     Unknown,
 }
 
 impl SamplingPosition {
     pub fn from(value: u8) -> Result<Self> {
         Ok(match value {
-            0 => Self::StartMPDU,
-            1 => Self::StartPLCP,
-            2 => Self::EndPPDU,
-            3 => Self::EndMPDU,
+            0 => Self::StartMpdu,
+            1 => Self::StartPlcp,
+            2 => Self::EndPpdu,
+            3 => Self::EndMpdu,
             15 => Self::Unknown,
             _ => return Err(Error::InvalidFormat),
         })

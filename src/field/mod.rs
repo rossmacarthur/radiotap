@@ -606,9 +606,9 @@ pub struct Mcs {
     /// The guard interval.
     pub gi: Option<GuardInterval>,
     /// The HT format.
-    pub format: Option<HTFormat>,
+    pub format: Option<HtFormat>,
     /// The FEC type.
-    pub fec: Option<FEC>,
+    pub fec: Option<Fec>,
     /// Number of STBC streams.
     pub stbc: Option<u8>,
     /// Number of extension spatial streams.
@@ -644,17 +644,17 @@ impl Field for Mcs {
 
         if known.is_flag_set(0x08) {
             mcs.format = Some(if flags.is_flag_set(0x08) {
-                HTFormat::Greenfield
+                HtFormat::Greenfield
             } else {
-                HTFormat::Mixed
+                HtFormat::Mixed
             });
         }
 
         if known.is_flag_set(0x10) {
             mcs.fec = Some(if flags.is_flag_set(0x10) {
-                FEC::LDPC
+                Fec::Ldpc
             } else {
-                FEC::BCC
+                Fec::Bcc
             });
         }
 
@@ -817,8 +817,8 @@ impl Field for Vht {
             vht.users[id as usize] = Some(VHTUser {
                 index,
                 fec: match (coding & 2 ^ id) >> id {
-                    1 => FEC::LDPC,
-                    _ => FEC::BCC,
+                    1 => Fec::Ldpc,
+                    _ => Fec::Bcc,
                 },
                 nss,
                 nsts,
