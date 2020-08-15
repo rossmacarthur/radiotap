@@ -47,43 +47,37 @@
 
 pub mod field;
 
-use std::{io::Cursor, result};
+use std::io::{self, Cursor};
+use std::result;
 
-use quick_error::quick_error;
+use thiserror::Error;
 
 use crate::field::*;
 
-quick_error! {
-    /// All errors returned and used by the radiotap module.
-    #[derive(Debug)]
-    pub enum Error {
-        /// The internal cursor on the data returned an IO error.
-        ParseError(err: std::io::Error) {
-            from()
-            source(err)
-            description(err.description())
-        }
-        /// The given data is not a complete Radiotap capture.
-        IncompleteError {
-            display("The given data is not a complete Radiotap capture")
-        }
-        /// The given data is shorter than the amount specified in the Radiotap header.
-        InvalidLength {
-            display("The given data is shorter than the amount specified in the Radiotap header")
-        }
-        /// The given data is not a valid Radiotap capture.
-        InvalidFormat {
-            display("The given data is not a valid Radiotap capture")
-        }
-        /// Unsupported Radiotap header version.
-        UnsupportedVersion {
-            display("Unsupported Radiotap header version")
-        }
-        /// Unsupported Radiotap field.
-        UnsupportedField {
-            display("Unsupported Radiotap field")
-        }
-    }
+/// All errors returned and used by the radiotap module.
+#[derive(Debug, Error)]
+pub enum Error {
+    /// The internal cursor on the data returned an IO error.
+    #[error("parse error: {err}")]
+    ParseError {
+        #[from]
+        err: io::Error,
+    },
+    /// The given data is not a complete Radiotap capture.
+    #[error("the given data is not a complete Radiotap capture")]
+    IncompleteError,
+    /// The given data is shorter than the amount specified in the Radiotap header.
+    #[error("the given data is shorter than the amount specified in the Radiotap header")]
+    InvalidLength,
+    /// The given data is not a valid Radiotap capture.
+    #[error("the given data is not a valid Radiotap capture")]
+    InvalidFormat,
+    /// Unsupported Radiotap header version.
+    #[error("unsupported Radiotap header version")]
+    UnsupportedVersion,
+    /// Unsupported Radiotap field.
+    #[error("unsupported Radiotap field")]
+    UnsupportedField,
 }
 
 type Result<T> = result::Result<T, Error>;

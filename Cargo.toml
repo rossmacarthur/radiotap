@@ -13,7 +13,7 @@ version = "1.3.0"
 [dependencies]
 bitops = "0.1.0"
 byteorder = "1.3.4"
-quick-error = "2.0.0"
+thiserror = "1.0.20"
 
 [dev-dependencies]
 pcap = "0.7.0"
