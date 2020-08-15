@@ -40,31 +40,31 @@ pub enum Kind {
 }
 
 impl Kind {
-    pub fn new(value: u8) -> Result<Kind> {
+    pub fn new(value: u8) -> Result<Self> {
         Ok(match value {
-            0 => Kind::Tsft,
-            1 => Kind::Flags,
-            2 => Kind::Rate,
-            3 => Kind::Channel,
-            4 => Kind::Fhss,
-            5 => Kind::AntennaSignal,
-            6 => Kind::AntennaNoise,
-            7 => Kind::LockQuality,
-            8 => Kind::TxAttenuation,
-            9 => Kind::TxAttenuationDb,
-            10 => Kind::TxPower,
-            11 => Kind::Antenna,
-            12 => Kind::AntennaSignalDb,
-            13 => Kind::AntennaNoiseDb,
-            14 => Kind::RxFlags,
-            15 => Kind::TxFlags,
-            16 => Kind::RtsRetries,
-            17 => Kind::DataRetries,
-            18 => Kind::XChannel,
-            19 => Kind::Mcs,
-            20 => Kind::AmpduStatus,
-            21 => Kind::Vht,
-            22 => Kind::Timestamp,
+            0 => Self::Tsft,
+            1 => Self::Flags,
+            2 => Self::Rate,
+            3 => Self::Channel,
+            4 => Self::Fhss,
+            5 => Self::AntennaSignal,
+            6 => Self::AntennaNoise,
+            7 => Self::LockQuality,
+            8 => Self::TxAttenuation,
+            9 => Self::TxAttenuationDb,
+            10 => Self::TxPower,
+            11 => Self::Antenna,
+            12 => Self::AntennaSignalDb,
+            13 => Self::AntennaNoiseDb,
+            14 => Self::RxFlags,
+            15 => Self::TxFlags,
+            16 => Self::RtsRetries,
+            17 => Self::DataRetries,
+            18 => Self::XChannel,
+            19 => Self::Mcs,
+            20 => Self::AmpduStatus,
+            21 => Self::Vht,
+            22 => Self::Timestamp,
             _ => {
                 return Err(Error::UnsupportedField);
             }
@@ -74,17 +74,17 @@ impl Kind {
     /// Returns the align value for the field.
     pub fn align(self) -> u64 {
         match self {
-            Kind::Tsft | Kind::Timestamp => 8,
-            Kind::XChannel | Kind::AmpduStatus => 4,
-            Kind::Channel
-            | Kind::Fhss
-            | Kind::LockQuality
-            | Kind::TxAttenuation
-            | Kind::TxAttenuationDb
-            | Kind::RxFlags
-            | Kind::TxFlags
-            | Kind::Vht
-            | Kind::VendorNamespace(_) => 2,
+            Self::Tsft | Self::Timestamp => 8,
+            Self::XChannel | Self::AmpduStatus => 4,
+            Self::Channel
+            | Self::Fhss
+            | Self::LockQuality
+            | Self::TxAttenuation
+            | Self::TxAttenuationDb
+            | Self::RxFlags
+            | Self::TxFlags
+            | Self::Vht
+            | Self::VendorNamespace(_) => 2,
             _ => 1,
         }
     }
@@ -92,17 +92,17 @@ impl Kind {
     /// Returns the size of the field.
     pub fn size(self) -> usize {
         match self {
-            Kind::Vht | Kind::Timestamp => 12,
-            Kind::Tsft | Kind::AmpduStatus | Kind::XChannel => 8,
-            Kind::VendorNamespace(_) => 6,
-            Kind::Channel => 4,
-            Kind::Mcs => 3,
-            Kind::Fhss
-            | Kind::LockQuality
-            | Kind::TxAttenuation
-            | Kind::TxAttenuationDb
-            | Kind::RxFlags
-            | Kind::TxFlags => 2,
+            Self::Vht | Self::Timestamp => 12,
+            Self::Tsft | Self::AmpduStatus | Self::XChannel => 8,
+            Self::VendorNamespace(_) => 6,
+            Self::Channel => 4,
+            Self::Mcs => 3,
+            Self::Fhss
+            | Self::LockQuality
+            | Self::TxAttenuation
+            | Self::TxAttenuationDb
+            | Self::RxFlags
+            | Self::TxFlags => 2,
             _ => 1,
         }
     }
@@ -144,7 +144,7 @@ pub struct Header {
 }
 
 impl Field for Header {
-    fn from_bytes(input: &[u8]) -> Result<Header> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
 
         let version = cursor.read_u8()?;
@@ -176,7 +176,8 @@ impl Field for Header {
                                 kinds.push(kind);
                             }
                             Err(Error::UnsupportedField) => {
-                                // Does not matter, we will just parse the ones we can
+                                // Does not matter, we will just parse the ones
+                                // we can
                             }
                             Err(e) => return Err(e),
                         }
@@ -207,7 +208,7 @@ impl Field for Header {
             }
         }
 
-        Ok(Header {
+        Ok(Self {
             version,
             length: length as usize,
             size: cursor.position() as usize,
@@ -224,13 +225,13 @@ pub struct VendorNamespace {
 }
 
 impl Field for VendorNamespace {
-    fn from_bytes(input: &[u8]) -> Result<VendorNamespace> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let mut oui = [0; 3];
         cursor.read_exact(&mut oui)?;
         let sub_namespace = cursor.read_u8()?;
         let skip_length = cursor.read_u16::<LE>()?;
-        Ok(VendorNamespace {
+        Ok(Self {
             oui,
             sub_namespace,
             skip_length,
@@ -471,9 +472,9 @@ pub struct Antenna {
 }
 
 impl Field for Antenna {
-    fn from_bytes(input: &[u8]) -> Result<Antenna> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
-        Ok(Antenna { value })
+        Ok(Self { value })
     }
 }
 
@@ -843,7 +844,7 @@ pub struct Timestamp {
 }
 
 impl Field for Timestamp {
-    fn from_bytes(input: &[u8]) -> Result<Timestamp> {
+    fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
 
         let timestamp = cursor.read_u64::<LE>()?;
@@ -857,7 +858,7 @@ impl Field for Timestamp {
             accuracy = None;
         }
 
-        Ok(Timestamp {
+        Ok(Self {
             timestamp,
             unit,
             position,

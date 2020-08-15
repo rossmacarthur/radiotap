@@ -41,8 +41,10 @@
 
 pub mod field;
 
-use std::io::{self, Cursor};
-use std::result;
+use std::{
+    io::{self, Cursor},
+    result,
+};
 
 use thiserror::Error;
 
@@ -60,7 +62,8 @@ pub enum Error {
     /// The given data is not a complete Radiotap capture.
     #[error("the given data is not a complete Radiotap capture")]
     IncompleteError,
-    /// The given data is shorter than the amount specified in the Radiotap header.
+    /// The given data is shorter than the amount specified in the Radiotap
+    /// header.
     #[error("the given data is shorter than the amount specified in the Radiotap header")]
     InvalidLength,
     /// The given data is not a valid Radiotap capture.
@@ -181,8 +184,8 @@ impl<'a> Iterator for RadiotapIteratorIntoIter<'a> {
 }
 
 impl Default for Header {
-    fn default() -> Header {
-        Header {
+    fn default() -> Self {
+        Self {
             version: 0,
             length: 8,
             present: Vec::new(),
@@ -224,16 +227,16 @@ pub struct Radiotap {
 impl Radiotap {
     /// Returns the parsed [Radiotap](struct.Radiotap.html) from an input byte
     /// array.
-    pub fn from_bytes(input: &[u8]) -> Result<Radiotap> {
-        Ok(Radiotap::parse(input)?.0)
+    pub fn from_bytes(input: &[u8]) -> Result<Self> {
+        Ok(Self::parse(input)?.0)
     }
 
     /// Returns the parsed [Radiotap](struct.Radiotap.html) and remaining data
     /// from an input byte array.
-    pub fn parse(input: &[u8]) -> Result<(Radiotap, &[u8])> {
+    pub fn parse(input: &[u8]) -> Result<(Self, &[u8])> {
         let (iterator, rest) = RadiotapIterator::parse(input)?;
 
-        let mut radiotap = Radiotap {
+        let mut radiotap = Self {
             header: iterator.header.clone(),
             ..Default::default()
         };

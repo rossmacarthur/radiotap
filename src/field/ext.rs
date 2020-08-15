@@ -234,7 +234,7 @@ pub struct Bandwidth {
 }
 
 impl Bandwidth {
-    pub fn new(value: u8) -> Result<Bandwidth> {
+    pub fn new(value: u8) -> Result<Self> {
         let (bandwidth, sideband, sideband_index) = match value {
             0 => (20, None, None),
             1 => (40, None, None),
@@ -266,7 +266,7 @@ impl Bandwidth {
                 return Err(Error::InvalidFormat);
             }
         };
-        Ok(Bandwidth {
+        Ok(Self {
             bandwidth,
             sideband,
             sideband_index,
@@ -324,11 +324,11 @@ pub enum TimeUnit {
 }
 
 impl TimeUnit {
-    pub fn new(value: u8) -> Result<TimeUnit> {
+    pub fn new(value: u8) -> Result<Self> {
         Ok(match value {
-            0 => TimeUnit::Milliseconds,
-            1 => TimeUnit::Microseconds,
-            2 => TimeUnit::Nanoseconds,
+            0 => Self::Milliseconds,
+            1 => Self::Microseconds,
+            2 => Self::Nanoseconds,
             _ => {
                 return Err(Error::InvalidFormat);
             }
@@ -347,13 +347,13 @@ pub enum SamplingPosition {
 }
 
 impl SamplingPosition {
-    pub fn from(value: u8) -> Result<SamplingPosition> {
+    pub fn from(value: u8) -> Result<Self> {
         Ok(match value {
-            0 => SamplingPosition::StartMPDU,
-            1 => SamplingPosition::StartPLCP,
-            2 => SamplingPosition::EndPPDU,
-            3 => SamplingPosition::EndMPDU,
-            15 => SamplingPosition::Unknown,
+            0 => Self::StartMPDU,
+            1 => Self::StartPLCP,
+            2 => Self::EndPPDU,
+            3 => Self::EndMPDU,
+            15 => Self::Unknown,
             _ => return Err(Error::InvalidFormat),
         })
     }
