@@ -10,7 +10,7 @@ use crate::{field::ext::*, Error, Result};
 
 type Oui = [u8; 3];
 
-/// The type of Radiotap field.
+/// The type of radiotap field.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Kind {
     Tsft,
@@ -130,16 +130,16 @@ where
     Ok(Some(T::from_bytes(input)?))
 }
 
-/// The Radiotap header, contained in all Radiotap captures.
+/// The radiotap header, contained in all radiotap captures.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Header {
-    /// The Radiotap version, only version 0 is supported.
+    /// The radiotap version, only version 0 is supported.
     pub version: u8,
-    /// The length of the entire Radiotap capture.
+    /// The length of the entire radiotap capture.
     pub length: usize,
-    /// The size of the Radiotap header.
+    /// The size of the radiotap header.
     pub size: usize,
-    /// The fields present in the Radiotap capture.
+    /// The fields present in the radiotap capture.
     pub present: Vec<Kind>,
 }
 

@@ -1,6 +1,6 @@
 [package]
 authors = ["Ross MacArthur <ross@macarthur.io>"]
-description = "A parser for the Radiotap capture format. See http://www.radiotap.org."
+description = "A parser for the radiotap capture format."
 edition = "2018"
 homepage = "https://github.com/rossmacarthur/radiotap"
 keywords = ["frame", "packet", "parsing", "pcap", "radiotap", "wifi"]

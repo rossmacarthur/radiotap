@@ -1,4 +1,4 @@
-//! Extended Radiotap field definitions and parsers.
+//! Extended radiotap field definitions and parsers.
 
 use crate::{Error, Result};
 

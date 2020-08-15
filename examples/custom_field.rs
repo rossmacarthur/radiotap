@@ -1,4 +1,4 @@
-//! This example demonstrates how to implement a custom Radiotap field parser by
+//! This example demonstrates how to implement a custom radiotap field parser by
 //! implementing the `field::Field` trait.
 
 use radiotap::{field, Error, RadiotapIterator};

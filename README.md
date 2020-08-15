@@ -4,7 +4,7 @@
 [![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-blue.svg?style=flat-square)][docs]
 [![Build Status](https://img.shields.io/travis/rossmacarthur/radiotap/master.svg?style=flat-square)][travis]
 
-A parser for the [Radiotap](http://www.radiotap.org/) capture format.
+A parser for the [radiotap](http://www.radiotap.org/) capture format.
 
 ## Getting started
 
@@ -41,7 +41,7 @@ let radiotap = Radiotap::from_bytes(&capture).unwrap();
 println!("{:?}", radiotap.vht);
 ```
 
-If you just want to parse a few specific fields from the Radiotap capture you
+If you just want to parse a few specific fields from the radiotap capture you
 can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 
 ```rust

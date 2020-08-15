@@ -1,4 +1,4 @@
-//! A parser for the [Radiotap](http://www.radiotap.org/) capture format.
+//! A parser for the [radiotap](http://www.radiotap.org/) capture format.
 //!
 //! # Usage
 //!
@@ -17,7 +17,7 @@
 //! println!("{:?}", radiotap.vht);
 //! ```
 //!
-//! If you just want to parse a few specific fields from the Radiotap capture
+//! If you just want to parse a few specific fields from the radiotap capture
 //! you can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 //!
 //! ```
@@ -59,21 +59,21 @@ pub enum Error {
         #[from]
         err: io::Error,
     },
-    /// The given data is not a complete Radiotap capture.
-    #[error("the given data is not a complete Radiotap capture")]
+    /// The given data is not a complete radiotap capture.
+    #[error("the given data is not a complete radiotap capture")]
     IncompleteError,
-    /// The given data is shorter than the amount specified in the Radiotap
+    /// The given data is shorter than the amount specified in the radiotap
     /// header.
-    #[error("the given data is shorter than the amount specified in the Radiotap header")]
+    #[error("the given data is shorter than the amount specified in the radiotap header")]
     InvalidLength,
-    /// The given data is not a valid Radiotap capture.
-    #[error("the given data is not a valid Radiotap capture")]
+    /// The given data is not a valid radiotap capture.
+    #[error("the given data is not a valid radiotap capture")]
     InvalidFormat,
-    /// Unsupported Radiotap header version.
-    #[error("unsupported Radiotap header version")]
+    /// Unsupported radiotap header version.
+    #[error("unsupported radiotap header version")]
     UnsupportedVersion,
-    /// Unsupported Radiotap field.
-    #[error("unsupported Radiotap field")]
+    /// Unsupported radiotap field.
+    #[error("unsupported radiotap field")]
     UnsupportedField,
 }
 
@@ -93,7 +93,7 @@ impl<T> Align for Cursor<T> {
     }
 }
 
-/// Represents an unparsed Radiotap capture format, only the header field is
+/// Represents an unparsed radiotap capture format, only the header field is
 /// parsed.
 #[derive(Debug, Clone)]
 pub struct RadiotapIterator<'a> {
@@ -113,7 +113,7 @@ impl<'a> RadiotapIterator<'a> {
     }
 }
 
-/// An iterator over Radiotap fields.
+/// An iterator over radiotap fields.
 #[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct RadiotapIteratorIntoIter<'a> {
@@ -194,7 +194,7 @@ impl Default for Header {
     }
 }
 
-/// Represents a parsed Radiotap capture, including the parsed header and all
+/// Represents a parsed radiotap capture, including the parsed header and all
 /// fields as Option members.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Radiotap {
