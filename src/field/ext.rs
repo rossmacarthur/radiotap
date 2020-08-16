@@ -124,7 +124,7 @@ const VHT_RATE: [[f32; 8]; 80] = [
 
 /// Returns the 802.11n data rate based on the MCS index, bandwidth, and guard
 /// interval.
-pub fn ht_rate(index: u8, bw: Bandwidth, gi: GuardInterval) -> Result<f32> {
+pub fn ht_rate(index: u8, bw: &Bandwidth, gi: &GuardInterval) -> Result<f32> {
     if index > 31 {
         return Err(Error::InvalidFormat);
     }
@@ -135,14 +135,14 @@ pub fn ht_rate(index: u8, bw: Bandwidth, gi: GuardInterval) -> Result<f32> {
         _ => return Err(Error::InvalidFormat),
     };
 
-    let col = b + (if gi == GuardInterval::Short { 1 } else { 0 });
+    let col = b + (if let GuardInterval::Short = gi { 1 } else { 0 });
 
     Ok(HT_RATE[index as usize][col])
 }
 
 /// Returns the 802.11ac data rate based on the MCS index, bandwidth, guard
 /// interval, and number of spatial streams.
-pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<f32> {
+pub fn vht_rate(index: u8, bw: &Bandwidth, gi: &GuardInterval, nss: u8) -> Result<f32> {
     if index > 9 || nss > 8 {
         return Err(Error::InvalidFormat);
     }
@@ -155,7 +155,7 @@ pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<
         _ => return Err(Error::InvalidFormat),
     };
 
-    let col = b + (if gi == GuardInterval::Short { 1 } else { 0 });
+    let col = b + (if let GuardInterval::Short = gi { 1 } else { 0 });
     let row = index + (nss - 1) * 10;
 
     let rate = VHT_RATE[row as usize][col];
@@ -167,7 +167,7 @@ pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<
 }
 
 /// Flags describing the channel.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ChannelFlags {
     /// Turbo channel.
     pub turbo: bool,
@@ -188,7 +188,7 @@ pub struct ChannelFlags {
 }
 
 /// Extended flags describing the channel.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct XChannelFlags {
     /// Turbo channel.
     pub turbo: bool,
@@ -223,7 +223,7 @@ pub struct XChannelFlags {
 }
 
 /// Struct containing the bandwidth, sideband, and sideband index.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Bandwidth {
     /// The bandwidth in MHz.
     pub bandwidth: u8,
@@ -276,7 +276,7 @@ impl Bandwidth {
 
 /// Represents a [VHT](../struct.VHT.html) user, the [VHT](../struct.VHT.html)
 /// encodes the MCS and NSS for up to four users.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VHTUser {
     /// The 802.11ac MCS index.
     pub index: u8,
@@ -291,7 +291,7 @@ pub struct VHTUser {
 }
 
 /// The guard interval.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GuardInterval {
     /// 800 ns.
     Long,
@@ -300,7 +300,7 @@ pub enum GuardInterval {
 }
 
 /// Forward error correction type.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Fec {
     /// Binary convolutional coding.
     Bcc,
@@ -309,14 +309,14 @@ pub enum Fec {
 }
 
 /// The HT format.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum HtFormat {
     Mixed,
     Greenfield,
 }
 
 /// The time unit of the [Timestamp](../struct.Timestamp.html).
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TimeUnit {
     Millis,
     Micros,
@@ -337,7 +337,7 @@ impl TimeUnit {
 }
 
 /// The sampling position of the [Timestamp](../struct.Timestamp.html).
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SamplingPosition {
     StartMpdu,
     StartPlcp,

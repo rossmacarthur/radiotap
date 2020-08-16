@@ -11,7 +11,7 @@ use crate::{field::ext::*, Error, Result};
 type Oui = [u8; 3];
 
 /// The type of radiotap field.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Tsft,
     Flags,
@@ -72,7 +72,7 @@ impl Kind {
     }
 
     /// Returns the align value for the field.
-    pub fn align(self) -> u64 {
+    pub fn align(&self) -> u64 {
         match self {
             Self::Tsft | Self::Timestamp => 8,
             Self::XChannel | Self::AmpduStatus => 4,
@@ -90,7 +90,7 @@ impl Kind {
     }
 
     /// Returns the size of the field.
-    pub fn size(self) -> usize {
+    pub fn size(&self) -> usize {
         match self {
             Self::Vht | Self::Timestamp => 12,
             Self::Tsft | Self::AmpduStatus | Self::XChannel => 8,
@@ -123,7 +123,7 @@ where
 }
 
 /// The radiotap header, contained in all radiotap captures.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Header {
     /// The radiotap version, only version 0 is supported.
     pub version: u8,
@@ -209,7 +209,7 @@ impl FromBytes for Header {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VendorNamespace {
     pub oui: Oui,
     pub sub_namespace: u8,
@@ -234,7 +234,7 @@ impl FromBytes for VendorNamespace {
 /// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization
 /// Function timer when the first bit of the MPDU arrived at the MAC. For
 /// received frames only.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Tsft {
     pub value: u64,
 }
@@ -247,7 +247,7 @@ impl FromBytes for Tsft {
 }
 
 /// Properties of transmitted and received frames.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Flags {
     /// The frame was sent/received during CFP.
     pub cfp: bool,
@@ -287,7 +287,7 @@ impl FromBytes for Flags {
 /// The legacy data rate in Mbps. Usually only one of the
 /// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT](struct.VHT.html)
 /// fields is present.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Rate {
     pub value: f32,
 }
@@ -301,7 +301,7 @@ impl FromBytes for Rate {
 
 /// The transmitted or received frequency in MHz, including flags describing the
 /// channel.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Channel {
     /// The frequency in MHz.
     pub freq: u16,
@@ -329,7 +329,7 @@ impl FromBytes for Channel {
 }
 
 /// The hop set and pattern for frequency-hopping radios.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Fhss {
     pub hopset: u8,
     pub pattern: u8,
@@ -346,7 +346,7 @@ impl FromBytes for Fhss {
 
 /// RF signal power at the antenna in dBm. Indicates the RF signal power at the
 /// antenna, in decibels difference from 1mW.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AntennaSignal {
     pub value: i8,
 }
@@ -360,7 +360,7 @@ impl FromBytes for AntennaSignal {
 
 /// RF signal power at the antenna in dB. Indicates the RF signal power at the
 /// antenna, in decibels difference from an arbitrary, fixed reference.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AntennaSignalDb {
     pub value: u8,
 }
@@ -374,7 +374,7 @@ impl FromBytes for AntennaSignalDb {
 
 /// RF noise power at the antenna in dBm. Indicates the RF signal noise at the
 /// antenna, in decibels  difference from 1mW.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AntennaNoise {
     pub value: i8,
 }
@@ -388,7 +388,7 @@ impl FromBytes for AntennaNoise {
 
 /// RF noise power at the antenna in dB. Indicates the RF signal noise at the
 /// antenna, in decibels difference from an arbitrary, fixed reference.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AntennaNoiseDb {
     pub value: u8,
 }
@@ -402,7 +402,7 @@ impl FromBytes for AntennaNoiseDb {
 
 /// Quality of Barker code lock, unitless. Monotonically nondecreasing with
 /// "better" lock strength. Called "Signal Quality" in datasheets.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LockQuality {
     pub value: u16,
 }
@@ -416,7 +416,7 @@ impl FromBytes for LockQuality {
 
 /// Transmit power expressed as unitless distance from max power. 0 is max
 /// power. Monotonically nondecreasing with lower power levels.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TxAttenuation {
     pub value: u16,
 }
@@ -430,7 +430,7 @@ impl FromBytes for TxAttenuation {
 
 /// Transmit power in dB. 0 is max power. Monotonically nondecreasing with lower
 /// power levels.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TxAttenuationDb {
     pub value: u16,
 }
@@ -444,7 +444,7 @@ impl FromBytes for TxAttenuationDb {
 
 /// Transmit power in dBm. This is the absolute power level measured at the
 /// antenna port.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TxPower {
     pub value: i8,
 }
@@ -458,7 +458,7 @@ impl FromBytes for TxPower {
 
 /// Indication of the transmit/receive antenna for this frame. The first antenna
 /// is antenna 0.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Antenna {
     pub value: u8,
 }
@@ -471,7 +471,7 @@ impl FromBytes for Antenna {
 }
 
 /// Properties of received frames.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RxFlags {
     pub bad_plcp: bool,
 }
@@ -486,7 +486,7 @@ impl FromBytes for RxFlags {
 }
 
 /// Properties of transmitted frames.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TxFlags {
     /// Transmission failed due to excessive retries.
     pub fail: bool,
@@ -516,7 +516,7 @@ impl FromBytes for TxFlags {
 }
 
 /// Number of RTS retries a transmitted frame used.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RtsRetries {
     pub value: u8,
 }
@@ -529,7 +529,7 @@ impl FromBytes for RtsRetries {
 }
 
 /// Number of data retries a transmitted frame used.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DataRetries {
     pub value: u8,
 }
@@ -542,7 +542,7 @@ impl FromBytes for DataRetries {
 }
 
 /// Extended channel information.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct XChannel {
     /// The channel flags.
     pub flags: XChannelFlags,
@@ -589,7 +589,7 @@ impl FromBytes for XChannel {
 /// The IEEE 802.11n data rate index. Usually only one of the
 /// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT] fields is
 /// present.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Mcs {
     /// The bandwidth.
     pub bw: Option<Bandwidth>,
@@ -659,9 +659,10 @@ impl FromBytes for Mcs {
             mcs.ness = Some(known & 0x80 >> 6 | flags & 0x80 >> 7)
         }
 
-        if mcs.bw.is_some() && mcs.gi.is_some() {
-            mcs.datarate = Some(ht_rate(index, mcs.bw.unwrap(), mcs.gi.unwrap())?);
-        }
+        mcs.datarate = match (&mcs.bw, &mcs.gi) {
+            (Some(bw), Some(gi)) => Some(ht_rate(index, bw, gi)?),
+            _ => None,
+        };
 
         Ok(mcs)
     }
@@ -669,7 +670,7 @@ impl FromBytes for Mcs {
 
 /// The presence of this field indicates that the frame was received as part of
 /// an a-MPDU.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct AmpduStatus {
     /// The A-MPDU reference number.
     pub reference: u32,
@@ -709,7 +710,7 @@ impl FromBytes for AmpduStatus {
 /// The IEEE 802.11ac data rate index. Usually only one of the
 /// [Rate](struct.Rate.html), [MCS](struct.MCS.html), and [VHT](struct.VHT.html)
 /// fields is present.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Vht {
     /// Whether all spatial streams of all users have STBC.
     pub stbc: Option<bool>,
@@ -800,10 +801,9 @@ impl FromBytes for Vht {
             let nsts = nss << (flags & 0x01);
             let id = i as u8;
 
-            let datarate = if vht.bw.is_some() && vht.gi.is_some() {
-                Some(vht_rate(index, vht.bw.unwrap(), vht.gi.unwrap(), nss)?)
-            } else {
-                None
+            let datarate = match (&vht.bw, &vht.gi) {
+                (Some(bw), Some(gi)) => Some(vht_rate(index, bw, gi, nss)?),
+                _ => None,
             };
 
             vht.users[id as usize] = Some(VHTUser {
@@ -823,7 +823,7 @@ impl FromBytes for Vht {
 }
 
 /// The time the frame was transmitted or received.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Timestamp {
     /// The actual timestamp.
     pub timestamp: u64,
