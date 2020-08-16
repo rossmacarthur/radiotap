@@ -1,12 +1,10 @@
 //! Radiotap field definitions and parsers.
 
-pub mod ext;
-
 use bitops::BitOps;
 use byteorder::{ReadBytesExt, LE};
 use std::io::{Cursor, Read};
 
-use crate::{field::ext::*, Error, Result};
+use crate::{ext::*, Error, Result};
 
 type Oui = [u8; 3];
 

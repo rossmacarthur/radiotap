@@ -40,6 +40,7 @@
 //! }
 //! ```
 
+pub mod ext;
 pub mod field;
 
 use std::{
