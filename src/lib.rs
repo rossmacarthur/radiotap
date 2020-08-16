@@ -21,7 +21,8 @@
 //! you can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
 //!
 //! ```
-//! # use radiotap::{field, RadiotapIterator};
+//! # use radiotap::field::{self, FromBytes};
+//! # use radiotap::RadiotapIterator;
 //! let capture = [
 //!     0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
 //!     166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
@@ -31,7 +32,7 @@
 //! for element in RadiotapIterator::from_bytes(&capture).unwrap() {
 //!     match element {
 //!         Ok((field::Kind::Vht, data)) => {
-//!             let vht: field::Vht = field::from_bytes(data).unwrap();
+//!             let vht = field::Vht::from_bytes(data).unwrap();
 //!             println!("{:?}", vht);
 //!         }
 //!         _ => {}
@@ -107,7 +108,7 @@ impl<'a> RadiotapIterator<'a> {
     }
 
     pub fn parse(input: &'a [u8]) -> Result<(RadiotapIterator<'a>, &'a [u8])> {
-        let header: Header = from_bytes(input)?;
+        let header = Header::from_bytes(input)?;
         let (data, rest) = input.split_at(header.length);
         Ok((RadiotapIterator { header, data }, rest))
     }

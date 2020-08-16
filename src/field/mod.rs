@@ -108,26 +108,18 @@ impl Kind {
     }
 }
 
-pub trait Field {
+pub trait FromBytes {
     fn from_bytes(input: &[u8]) -> Result<Self>
     where
         Self: Sized;
 }
 
-/// Parse any `Field` and return a `Result<T>`.
-pub fn from_bytes<T>(input: &[u8]) -> Result<T>
-where
-    T: Field,
-{
-    T::from_bytes(input)
-}
-
 /// Parse any `Field` and return a `Result<Some<T>>`.
 pub fn from_bytes_some<T>(input: &[u8]) -> Result<Option<T>>
 where
-    T: Field,
+    T: FromBytes,
 {
-    Ok(Some(T::from_bytes(input)?))
+    Ok(Some(FromBytes::from_bytes(input)?))
 }
 
 /// The radiotap header, contained in all radiotap captures.
@@ -143,7 +135,7 @@ pub struct Header {
     pub present: Vec<Kind>,
 }
 
-impl Field for Header {
+impl FromBytes for Header {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
 
@@ -224,7 +216,7 @@ pub struct VendorNamespace {
     pub skip_length: u16,
 }
 
-impl Field for VendorNamespace {
+impl FromBytes for VendorNamespace {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let mut oui = [0; 3];
@@ -247,7 +239,7 @@ pub struct Tsft {
     pub value: u64,
 }
 
-impl Field for Tsft {
+impl FromBytes for Tsft {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u64::<LE>()?;
         Ok(Self { value })
@@ -276,7 +268,7 @@ pub struct Flags {
     pub sgi: bool,
 }
 
-impl Field for Flags {
+impl FromBytes for Flags {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u8()?;
         Ok(Self {
@@ -300,7 +292,7 @@ pub struct Rate {
     pub value: f32,
 }
 
-impl Field for Rate {
+impl FromBytes for Rate {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = f32::from(Cursor::new(input).read_i8()?) / 2.0;
         Ok(Self { value })
@@ -317,7 +309,7 @@ pub struct Channel {
     pub flags: ChannelFlags,
 }
 
-impl Field for Channel {
+impl FromBytes for Channel {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let freq = cursor.read_u16::<LE>()?;
@@ -343,7 +335,7 @@ pub struct Fhss {
     pub pattern: u8,
 }
 
-impl Field for Fhss {
+impl FromBytes for Fhss {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let hopset = cursor.read_u8()?;
@@ -359,7 +351,7 @@ pub struct AntennaSignal {
     pub value: i8,
 }
 
-impl Field for AntennaSignal {
+impl FromBytes for AntennaSignal {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
         Ok(Self { value })
@@ -373,7 +365,7 @@ pub struct AntennaSignalDb {
     pub value: u8,
 }
 
-impl Field for AntennaSignalDb {
+impl FromBytes for AntennaSignalDb {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
         Ok(Self { value })
@@ -387,7 +379,7 @@ pub struct AntennaNoise {
     pub value: i8,
 }
 
-impl Field for AntennaNoise {
+impl FromBytes for AntennaNoise {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
         Ok(Self { value })
@@ -401,7 +393,7 @@ pub struct AntennaNoiseDb {
     pub value: u8,
 }
 
-impl Field for AntennaNoiseDb {
+impl FromBytes for AntennaNoiseDb {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
         Ok(Self { value })
@@ -415,7 +407,7 @@ pub struct LockQuality {
     pub value: u16,
 }
 
-impl Field for LockQuality {
+impl FromBytes for LockQuality {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
         Ok(Self { value })
@@ -429,7 +421,7 @@ pub struct TxAttenuation {
     pub value: u16,
 }
 
-impl Field for TxAttenuation {
+impl FromBytes for TxAttenuation {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
         Ok(Self { value })
@@ -443,7 +435,7 @@ pub struct TxAttenuationDb {
     pub value: u16,
 }
 
-impl Field for TxAttenuationDb {
+impl FromBytes for TxAttenuationDb {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u16::<LE>()?;
         Ok(Self { value })
@@ -457,7 +449,7 @@ pub struct TxPower {
     pub value: i8,
 }
 
-impl Field for TxPower {
+impl FromBytes for TxPower {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_i8()?;
         Ok(Self { value })
@@ -471,7 +463,7 @@ pub struct Antenna {
     pub value: u8,
 }
 
-impl Field for Antenna {
+impl FromBytes for Antenna {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
         Ok(Self { value })
@@ -484,7 +476,7 @@ pub struct RxFlags {
     pub bad_plcp: bool,
 }
 
-impl Field for RxFlags {
+impl FromBytes for RxFlags {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u16::<LE>()?;
         Ok(Self {
@@ -510,7 +502,7 @@ pub struct TxFlags {
     pub no_seq: bool,
 }
 
-impl Field for TxFlags {
+impl FromBytes for TxFlags {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let flags = Cursor::new(input).read_u8()?;
         Ok(Self {
@@ -529,7 +521,7 @@ pub struct RtsRetries {
     pub value: u8,
 }
 
-impl Field for RtsRetries {
+impl FromBytes for RtsRetries {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
         Ok(Self { value })
@@ -542,7 +534,7 @@ pub struct DataRetries {
     pub value: u8,
 }
 
-impl Field for DataRetries {
+impl FromBytes for DataRetries {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let value = Cursor::new(input).read_u8()?;
         Ok(Self { value })
@@ -562,7 +554,7 @@ pub struct XChannel {
     pub max_power: u8,
 }
 
-impl Field for XChannel {
+impl FromBytes for XChannel {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let flags = cursor.read_u32::<LE>()?;
@@ -617,7 +609,7 @@ pub struct Mcs {
     pub datarate: Option<f32>,
 }
 
-impl Field for Mcs {
+impl FromBytes for Mcs {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let mut mcs = Self::default();
@@ -689,7 +681,7 @@ pub struct AmpduStatus {
     pub delimiter_crc: Option<u8>,
 }
 
-impl Field for AmpduStatus {
+impl FromBytes for AmpduStatus {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let mut ampdu = Self::default();
@@ -743,7 +735,7 @@ pub struct Vht {
     pub users: [Option<VHTUser>; 4],
 }
 
-impl Field for Vht {
+impl FromBytes for Vht {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
         let mut vht = Self::default();
@@ -843,7 +835,7 @@ pub struct Timestamp {
     pub accuracy: Option<u16>,
 }
 
-impl Field for Timestamp {
+impl FromBytes for Timestamp {
     fn from_bytes(input: &[u8]) -> Result<Self> {
         let mut cursor = Cursor::new(input);
 
