@@ -1,8 +1,8 @@
 # radiotap
 
-[![Crates.io Version](https://img.shields.io/crates/v/radiotap.svg?style=flat-square&color=blue)][crates]
-[![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-blue.svg?style=flat-square)][docs]
-[![Build Status](https://img.shields.io/travis/rossmacarthur/radiotap/master.svg?style=flat-square)][travis]
+[![Crates.io Version](https://img.shields.io/crates/v/radiotap.svg)](https://crates.io/crates/radiotap)
+[![Docs.rs Latest](https://img.shields.io/badge/docs.rs-latest-blue.svg)](https://docs.rs/radiotap)
+[![Build Status](https://img.shields.io/github/workflow/status/rossmacarthur/radiotap/build/master)](https://github.com/rossmacarthur/radiotap/actions?query=workflow%3Abuild)
 
 A parser for the [radiotap](http://www.radiotap.org/) capture format.
 
@@ -68,7 +68,3 @@ This project is dual licensed under the Apache 2.0 License and the MIT License.
 
 See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more
 details.
-
-[crates]: https://crates.io/crates/radiotap
-[docs]: https://docs.rs/radiotap
-[travis]: https://travis-ci.org/rossmacarthur/radiotap
