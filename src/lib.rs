@@ -16,40 +16,17 @@
 //! let radiotap = Radiotap::from_bytes(&capture).unwrap();
 //! println!("{:?}", radiotap.vht);
 //! ```
-//!
-//! If you just want to parse a few specific fields from the radiotap capture
-//! you can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
-//!
-//! ```
-//! # use radiotap::field::{self, FromBytes};
-//! # use radiotap::RadiotapIterator;
-//! let capture = [
-//!     0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-//!     166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!     4, 115, 0, 0, 0, 1, 63, 0, 0,
-//! ];
-//!
-//! for element in RadiotapIterator::from_bytes(&capture).unwrap() {
-//!     match element {
-//!         Ok((field::Kind::Vht, data)) => {
-//!             let vht = field::Vht::from_bytes(data).unwrap();
-//!             println!("{:?}", vht);
-//!         }
-//!         _ => {}
-//!     }
-//! }
-//! ```
 
-pub mod ext;
+mod bytes;
 pub mod field;
+mod util;
 
-use std::{
-    io::{self, Cursor},
-    result,
-};
+use std::io::{self, Cursor};
+use std::result;
 
 use thiserror::Error;
 
+use crate::bytes::{from_bytes_some, FromBytes};
 use crate::field::*;
 
 /// All errors returned and used by the radiotap module.
@@ -61,25 +38,38 @@ pub enum Error {
         #[from]
         err: io::Error,
     },
+
     /// The given data is not a complete radiotap capture.
     #[error("the given data is not a complete radiotap capture")]
     IncompleteError,
+
     /// The given data is shorter than the amount specified in the radiotap
     /// header.
-    #[error("the given data is shorter than the amount specified in the radiotap header")]
+    #[error("the given data is shorter than the amount expected")]
     InvalidLength,
+
+    /// The given field data is shorter than the amount expected.
+    #[error("the given field data is shorter than the amount expected")]
+    InvalidFieldLength,
+
     /// The given data is not a valid radiotap capture.
     #[error("the given data is not a valid radiotap capture")]
     InvalidFormat,
+
     /// Unsupported radiotap header version.
     #[error("unsupported radiotap header version")]
     UnsupportedVersion,
+
     /// Unsupported radiotap field.
     #[error("unsupported radiotap field")]
     UnsupportedField,
 }
 
-type Result<T> = result::Result<T, Error>;
+/// A result type to use throughout this crate.
+pub type Result<T> = result::Result<T, Error>;
+
+/// An Organizationally unique identifier.
+pub type Oui = [u8; 3];
 
 /// A trait to align an offset to particular word size, usually 1, 2, 4, or 8.
 trait Align {
@@ -289,10 +279,7 @@ mod tests {
             160, 0, 227, 5, 0, 0, 255, 255, 255, 255, 2, 0, 222, 173, 4,
         ];
 
-        assert_eq!(
-            Radiotap::from_bytes(&frame).unwrap().rate.unwrap(),
-            Rate { value: 2.0 }
-        );
+        assert_eq!(Radiotap::from_bytes(&frame).unwrap().rate.unwrap(), 4);
     }
 
     #[test]

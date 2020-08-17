@@ -1,20 +1,15 @@
 //! This example demonstrates how to implement a custom radiotap field parser by
 //! implementing the `field::Field` trait.
 
-use radiotap::field::{self, FromBytes};
-use radiotap::{Error, RadiotapIterator};
+use radiotap::{field, Error, RadiotapIterator};
 
 /// Our custom Antenna Signal struct
 #[derive(Debug)]
-struct MyAntennaSignal {
-    value: i8,
-}
+struct MyAntennaSignal(i8);
 
-impl FromBytes for MyAntennaSignal {
-    fn from_bytes(input: &[u8]) -> Result<MyAntennaSignal, Error> {
-        Ok(MyAntennaSignal {
-            value: input[0] as i8,
-        })
+impl MyAntennaSignal {
+    fn new(input: &[u8]) -> Result<MyAntennaSignal, Error> {
+        Ok(MyAntennaSignal(input[0] as i8))
     }
 }
 
@@ -27,7 +22,7 @@ fn main() {
 
     for element in RadiotapIterator::from_bytes(&capture).unwrap() {
         if let Ok((field::Kind::AntennaSignal, data)) = element {
-            let signal = MyAntennaSignal::from_bytes(data).unwrap();
+            let signal = MyAntennaSignal::new(data).unwrap();
             println!("{:?}", signal);
         }
     }

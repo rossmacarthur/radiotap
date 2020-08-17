@@ -166,71 +166,15 @@ pub fn vht_rate(index: u8, bw: &Bandwidth, gi: &GuardInterval, nss: u8) -> Resul
     Ok(rate)
 }
 
-/// Flags describing the channel.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChannelFlags {
-    /// Turbo channel.
-    pub turbo: bool,
-    /// Complementary Code Keying (CCK) channel.
-    pub cck: bool,
-    /// Orthogonal Frequency-Division Multiplexing (OFDM) channel.
-    pub ofdm: bool,
-    /// 2 GHz spectrum channel.
-    pub ghz2: bool,
-    /// 5 GHz spectrum channel.
-    pub ghz5: bool,
-    /// Only passive scan allowed.
-    pub passive: bool,
-    /// Dynamic CCK-OFDM channel.
-    pub dynamic: bool,
-    /// Gaussian Frequency Shift Keying (GFSK) channel.
-    pub gfsk: bool,
-}
-
-/// Extended flags describing the channel.
-#[derive(Debug, Clone, PartialEq)]
-pub struct XChannelFlags {
-    /// Turbo channel.
-    pub turbo: bool,
-    /// Complementary Code Keying (CCK) channel.
-    pub cck: bool,
-    /// Orthogonal Frequency-Division Multiplexing (OFDM) channel.
-    pub ofdm: bool,
-    /// 2 GHz spectrum channel.
-    pub ghz2: bool,
-    /// 5 GHz spectrum channel.
-    pub ghz5: bool,
-    /// Only passive scan allowed.
-    pub passive: bool,
-    /// Dynamic CCK-OFDM channel.
-    pub dynamic: bool,
-    /// Gaussian Frequency Shift Keying (GFSK) channel.
-    pub gfsk: bool,
-    /// GSM channel.
-    pub gsm: bool,
-    /// Static Turbo channel.
-    pub sturbo: bool,
-    /// Half rate channel.
-    pub half: bool,
-    /// Quarter rate channel.
-    pub quarter: bool,
-    /// HT Channel (20MHz Channel Width).
-    pub ht20: bool,
-    /// HT Channel (40MHz Channel Width with Extension channel above).
-    pub ht40u: bool,
-    /// HT Channel (40MHz Channel Width with Extension channel below).
-    pub ht40d: bool,
-}
-
 /// Struct containing the bandwidth, sideband, and sideband index.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Bandwidth {
     /// The bandwidth in MHz.
-    pub bandwidth: u8,
+    bandwidth: u8,
     /// The sideband bandwidth in MHz.
-    pub sideband: Option<u8>,
+    sideband: Option<u8>,
     /// The sideband index.
-    pub sideband_index: Option<u8>,
+    sideband_index: Option<u8>,
 }
 
 impl Bandwidth {
@@ -277,42 +221,17 @@ impl Bandwidth {
 /// Represents a [VHT](../struct.VHT.html) user, the [VHT](../struct.VHT.html)
 /// encodes the MCS and NSS for up to four users.
 #[derive(Debug, Clone, PartialEq)]
-pub struct VHTUser {
+pub struct VhtUser {
     /// The 802.11ac MCS index.
-    pub index: u8,
+    index: u8,
     /// The FEC type.
-    pub fec: Fec,
+    fec: Fec,
     /// Number of spatial streams (range 1 - 8).
-    pub nss: u8,
+    nss: u8,
     /// Number of space-time streams (range 1 - 16).
-    pub nsts: u8,
+    nsts: u8,
     /// The datarate in Mbps
-    pub datarate: Option<f32>,
-}
-
-/// The guard interval.
-#[derive(Debug, Clone, PartialEq)]
-pub enum GuardInterval {
-    /// 800 ns.
-    Long,
-    /// 400 ns.
-    Short,
-}
-
-/// Forward error correction type.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Fec {
-    /// Binary convolutional coding.
-    Bcc,
-    /// Low-density parity-check.
-    Ldpc,
-}
-
-/// The HT format.
-#[derive(Debug, Clone, PartialEq)]
-pub enum HtFormat {
-    Mixed,
-    Greenfield,
+    datarate: Option<f32>,
 }
 
 /// The time unit of the [Timestamp](../struct.Timestamp.html).
