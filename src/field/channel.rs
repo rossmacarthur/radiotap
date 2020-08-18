@@ -1,6 +1,8 @@
 //! Defines the Channel field.
 
-use super::*;
+use crate::field::Kind;
+use crate::prelude::*;
+use crate::Result;
 
 impl_bitflags! {
     /// Flags describing the channel.
@@ -57,5 +59,21 @@ impl Channel {
     /// Returns flags describing the channel.
     pub fn flags(&self) -> Flags {
         self.flags
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        assert_eq!(
+            Channel::from_hex("9e098004").unwrap(),
+            Channel {
+                freq: 2462,
+                flags: Flags::GHZ2 | Flags::DYNAMIC
+            }
+        );
     }
 }

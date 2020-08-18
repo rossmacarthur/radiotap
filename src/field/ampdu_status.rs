@@ -1,11 +1,11 @@
 //! Defines the A-MPDU Status field.
 
-use super::*;
-
-use crate::util::BoolExt;
+use crate::field::Kind;
+use crate::prelude::*;
+use crate::Result;
 
 impl_bitflags! {
-    /// Flags describing the A-MPDU this frame was part of.
+    /// Flags describing the A-MPDU.
     pub struct Flags: u16 {
         /// Driver reports 0-length subframes.
         const REPORT_ZERO_LEN = 0x0001;
@@ -88,5 +88,27 @@ impl AmpduStatus {
         self.flags
             .contains(Flags::EOF_KNOWN)
             .some(|| self.flags.contains(Flags::EOF))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        let ampdu_status = AmpduStatus::from_hex("631d030004000000").unwrap();
+        assert_eq!(
+            ampdu_status,
+            AmpduStatus {
+                reference: 204131,
+                flags: Flags::LAST_KNOWN,
+                delim_crc: 0,
+            }
+        );
+        assert_eq!(ampdu_status.is_zero_len(), None);
+        assert_eq!(ampdu_status.is_last(), Some(false));
+        assert_eq!(ampdu_status.delim_crc(), None);
+        assert_eq!(ampdu_status.has_eof(), None);
     }
 }

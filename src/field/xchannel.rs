@@ -1,6 +1,8 @@
 //! Defines the XChannel field.
 
-use super::*;
+use crate::field::Kind;
+use crate::prelude::*;
+use crate::Result;
 
 impl_bitflags! {
     /// Extended flags describing the channel.

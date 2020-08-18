@@ -8,12 +8,11 @@ mod kind;
 
 use std::io::{Cursor, Read};
 
-use bitflags::bitflags;
 use bitops::BitOps;
 use byteorder::{ReadBytesExt, LE};
 
-use crate::bytes::{Bytes, BytesExt, FromBytes};
 pub use crate::field::kind::Kind;
+use crate::prelude::*;
 use crate::{Error, Oui, Result};
 
 /////////////////////////////////////////////////////////////////////////
@@ -166,6 +165,15 @@ impl_enum! {
     }
 }
 
+impl From<bool> for Fec {
+    fn from(b: bool) -> Self {
+        match b {
+            false => Self::Bcc,
+            true => Self::Ldpc,
+        }
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////
 // Fields
 /////////////////////////////////////////////////////////////////////////
@@ -200,14 +208,14 @@ impl_newtype! {
     /// [VHT](./vht/struct.Vht.html)
     ///
     /// The raw value's unit is 500 Kbps. Use the
-    /// [`as_mbps`](struct.Rate.html#method.as_mbps) function to get the rate in
+    /// [`to_mbps`](struct.Rate.html#method.to_mbps) function to get the rate in
     /// megabits per second.
     pub struct Rate(u8);
 }
 
 impl Rate {
     /// Returns the data rate in megabits per second.
-    pub fn as_mbps(&self) -> f32 {
+    pub fn to_mbps(&self) -> f32 {
         f32::from(self.0) / 2.0
     }
 }
@@ -284,7 +292,7 @@ impl_newtype! {
 }
 
 impl_bitflags! {
-    /// Properties of transmitted and received frames.
+    /// Flags describing transmitted and received frames.
     pub struct Flags: u8 {
         /// The frame was sent/received during CFP.
         const CFP = 0x01;
@@ -361,3 +369,10 @@ impl Fhss {
         self.hop_pattern
     }
 }
+
+/////////////////////////////////////////////////////////////////////////
+// Unit tests
+/////////////////////////////////////////////////////////////////////////
+
+#[cfg(test)]
+mod tests {}

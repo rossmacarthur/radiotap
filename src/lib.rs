@@ -19,6 +19,7 @@
 
 mod bytes;
 pub mod field;
+mod prelude;
 mod util;
 
 use std::io::{self, Cursor};

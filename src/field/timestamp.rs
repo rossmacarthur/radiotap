@@ -1,16 +1,12 @@
 //! Defines the Timestamp field.
 
-use super::*;
-
-use std::result::Result;
 use std::time::Duration;
 use std::time::SystemTime;
 
 use thiserror::Error;
 
-use crate::bytes::FromBytes;
 use crate::field::Kind;
-use crate::util::BoolExt;
+use crate::prelude::*;
 
 impl_enum! {
     /// The time unit.

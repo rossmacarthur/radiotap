@@ -8,6 +8,11 @@ pub type Bytes<'a> = &'a [u8];
 /// Fallible conversion of bytes to a new type.
 pub trait FromBytes: Sized {
     fn from_bytes(bytes: Bytes) -> Result<Self>;
+
+    #[cfg(test)]
+    fn from_hex(s: &str) -> Result<Self> {
+        Self::from_bytes(&hex::decode(s).unwrap())
+    }
 }
 
 /// Allows types implementing `FromBytes` to be easily read from a `Bytes`.

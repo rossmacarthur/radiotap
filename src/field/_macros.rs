@@ -26,6 +26,7 @@ macro_rules! impl_enum {
         }
 
         impl $name {
+            #[allow(dead_code)]
             pub(crate) fn from_bits(bits: $ty) -> Option<Self> {
                 match bits {
                     $(
@@ -77,8 +78,8 @@ macro_rules! impl_newtype {
 
 macro_rules! impl_from_bytes_bitflags {
     ($ty:ty) => {
-        impl FromBytes for $ty {
-            fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
+        impl crate::bytes::FromBytes for $ty {
+            fn from_bytes(bytes: crate::bytes::Bytes) -> crate::Result<Self> {
                 Ok(Self::from_bits_truncate(bytes.try_read()?))
             }
         }
@@ -95,7 +96,7 @@ macro_rules! impl_bitflags {
             )+
         }
     ) => {
-        bitflags! {
+        bitflags::bitflags! {
             $(#[$outer])*
             pub struct $name: $ty {
                 $(
@@ -111,7 +112,7 @@ macro_rules! impl_bitflags {
             /// Consumes this field and returns the underlying value.
             #[inline]
             pub const fn into_inner(self) -> $ty {
-                self.bits()
+                self.bits
             }
         }
     };

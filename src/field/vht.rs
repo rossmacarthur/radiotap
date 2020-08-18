@@ -1,16 +1,15 @@
 //! Defines the VHT field.
 
-use super::*;
-
 use std::result::Result;
 
 use thiserror::Error;
 
-use crate::util::BoolExt;
+use crate::field::{Fec, GuardInterval, Kind};
+use crate::prelude::*;
 
 /// An error returned when parsing a [`Bandwidth`](enum.Bandwidth.html) from the
 /// raw bits in [`Vht.bandwidth()`](struct.Vht.html#method.bandwidth).
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 #[error("failed to parse bandwidth from value `{0}`")]
 pub struct ParseBandwidthError(u8);
 
@@ -73,17 +72,17 @@ impl_bitflags! {
 impl_bitflags! {
     /// Flags describing the VHT information.
     pub struct Flags: u8 {
-        /// Space-time block coding (STBC) information.
+        /// Endodes the space-time block coding (STBC).
         const STBC = 0x01;
-        /// Indicates whether STAs may doze during TXOP.
+        /// Encodes whether STAs may doze during TXOP.
         const TXOP_PS_NA = 0x02;
         /// Encodes the guard interval.
         const GI = 0x04;
-        /// Short Guard Interval Nsym disambiguation.
+        /// Encodes the short Guard Interval Nsym disambiguation.
         const SGI_NSYM_DA = 0x08;
-        /// LDPC extra OFDM symbol.
+        /// Encodes the LDPC extra OFDM symbol.
         const LDPC_EXTRA_OFDM_SYM = 0x10;
-        /// Whether this frame was beamformed.
+        /// Encodes whether this frame was beamformed.
         const BF = 0x20;
     }
 }
@@ -171,18 +170,10 @@ impl FromBytes for Vht {
 
 impl Vht {
     /// Returns whether all spatial streams of all users have STBC.
-    pub fn stbc(&self) -> Option<bool> {
+    pub fn has_stbc(&self) -> Option<bool> {
         self.known
             .contains(Known::STBC)
             .some(|| self.flags.contains(Flags::STBC))
-    }
-
-    /// Returns whether STAs may not doze during TXOP or the transmitter is
-    /// non-AP.
-    pub fn txop_ps_na(&self) -> Option<bool> {
-        self.known
-            .contains(Known::TXOP_PS_NA)
-            .some(|| self.flags.contains(Flags::TXOP_PS_NA))
     }
 
     /// Returns the guard interval.
@@ -192,26 +183,8 @@ impl Vht {
             .some(|| self.flags.contains(Flags::GI).into())
     }
 
-    /// Returns whether short guard interval NSYM disambiguation is set.
-    ///
-    /// False if NSYM mod 10 != 9 or short GI not used.
-    /// True if NSYM mod 10 = 9.
-    pub fn sgi_nsym_da(&self) -> Option<bool> {
-        self.known
-            .contains(Known::SGI_NSYM_DA)
-            .some(|| self.flags.contains(Flags::SGI_NSYM_DA))
-    }
-
-    /// Returns whether one or more users are using LDPC and the encoding
-    /// process resulted in extra OFDM symbol(s).
-    pub fn ldpc_extra_ofdm_sym(&self) -> Option<bool> {
-        self.known
-            .contains(Known::LDPC_EXTRA_OFDM_SYM)
-            .some(|| self.flags.contains(Flags::LDPC_EXTRA_OFDM_SYM))
-    }
-
     /// Returns whether the frame was beamformed.
-    pub fn beamformed(&self) -> Option<bool> {
+    pub fn is_beamformed(&self) -> Option<bool> {
         self.known
             .contains(Known::BF)
             .some(|| self.flags.contains(Flags::BF))
@@ -252,10 +225,10 @@ impl Vht {
                 continue;
             }
             let index = (mcs_nss & 0xf0) >> 4;
-            let stbc: u8 = self.stbc().unwrap_or(false).into();
+            let stbc: u8 = self.has_stbc().unwrap_or(false).into();
             let nsts = nss << stbc;
             let id = i as u8;
-            let fec = Fec::from_bits((self.coding & (1 << id)) >> id).unwrap();
+            let fec = ((self.coding & (1 << id)) > 0).into();
             users[i] = Some(User {
                 index,
                 nss,
@@ -264,5 +237,58 @@ impl Vht {
             })
         }
         users
+    }
+
+    /// Returns the raw known information.
+    pub fn known(&self) -> Known {
+        self.known
+    }
+
+    /// Returns the raw flags.
+    pub fn flags(&self) -> Flags {
+        self.flags
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic() {
+        let vht = Vht::from_hex("440004041200000000000000").unwrap();
+        assert_eq!(
+            vht,
+            Vht {
+                known: Known::BW | Known::GI,
+                flags: Flags::GI,
+                bandwidth: 4,
+                mcs_nss: [18, 0, 0, 0],
+                coding: 0,
+                group_id: 0,
+                partial_aid: 0,
+            }
+        );
+
+        assert_eq!(vht.has_stbc(), None);
+        assert_eq!(vht.guard_interval(), Some(GuardInterval::Short));
+        assert_eq!(vht.is_beamformed(), None);
+        assert_eq!(vht.bandwidth(), Some(Ok(Bandwidth::BW80)));
+        assert_eq!(vht.group_id(), None);
+        assert_eq!(vht.partial_aid(), None);
+        assert_eq!(
+            vht.users(),
+            [
+                Some(User {
+                    index: 1,
+                    nss: 2,
+                    nsts: 2,
+                    fec: Fec::Bcc
+                }),
+                None,
+                None,
+                None,
+            ]
+        );
     }
 }
