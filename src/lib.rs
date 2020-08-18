@@ -110,7 +110,9 @@ impl<'a> RadiotapIterator<'a> {
 #[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct RadiotapIteratorIntoIter<'a> {
-    present: Vec<Kind>,
+    present: Vec<u32>,
+    present_word: usize,
+    present_pos: u32,
     cursor: Cursor<&'a [u8]>,
 }
 
@@ -122,7 +124,12 @@ impl<'a> IntoIterator for &'a RadiotapIterator<'a> {
         let present = self.header.present.iter().rev().cloned().collect();
         let mut cursor = Cursor::new(self.data);
         cursor.set_position(self.header.size as u64);
-        RadiotapIteratorIntoIter { present, cursor }
+        RadiotapIteratorIntoIter {
+            present,
+            present_word: 0,
+            present_pos: 0,
+            cursor,
+        }
     }
 }
 
@@ -134,44 +141,88 @@ impl<'a> IntoIterator for RadiotapIterator<'a> {
         let present = self.header.present.iter().rev().cloned().collect();
         let mut cursor = Cursor::new(self.data);
         cursor.set_position(self.header.size as u64);
-        RadiotapIteratorIntoIter { present, cursor }
+        RadiotapIteratorIntoIter {
+            present,
+            present_word: 0,
+            present_pos: 0,
+            cursor,
+        }
     }
 }
+
+/// The presence bit representing the radiotap namespace.
+const PRESENCE_DEFAULT_NAMESPACE: u32 = 29;
+/// The presence bit representing a vendor namespace.
+const PRESENCE_VENDOR_NAMESPACE: u32 = 30;
+/// The presence bit representing another presence word follows.
+const PRESENCE_EXT: u32 = 31;
 
 impl<'a> Iterator for RadiotapIteratorIntoIter<'a> {
     type Item = Result<(Kind, &'a [u8])>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.present.pop() {
-            Some(mut kind) => {
-                // Align the cursor to the current field's needed alignment.
-                self.cursor.align(kind.align());
+        loop {
+            match self.present.get(self.present_word) {
+                Some(present) => {
+                    let bit = self.present_pos % 32;
 
-                let mut start = self.cursor.position() as usize;
-                let mut end = start + kind.size();
-
-                // The header lied about how long the body was
-                if end > self.cursor.get_ref().len() {
-                    Some(Err(Error::IncompleteError))
-                } else {
-                    // Switching to a vendor namespace, and we don't know how to handle
-                    // so we just return the entire vendor namespace section
-                    if kind == Kind::VendorNamespace(None) {
-                        match VendorNamespace::from_bytes(&self.cursor.get_ref()[start..end]) {
-                            Ok(vns) => {
-                                start += kind.size();
-                                end += vns.skip_length as usize;
-                                kind = Kind::VendorNamespace(Some(vns));
-                            }
-                            Err(e) => return Some(Err(e)),
-                        }
+                    if present & (1 << bit) == 0 {
+                        self.present_pos += 1;
+                        continue;
                     }
-                    let data = &self.cursor.get_ref()[start..end];
-                    self.cursor.set_position(end as u64);
-                    Some(Ok((kind, data)))
+
+                    match bit {
+                        PRESENCE_DEFAULT_NAMESPACE => {
+                            self.present_word += 1;
+                            self.present_pos = 0;
+                            continue;
+                        }
+                        PRESENCE_VENDOR_NAMESPACE => {
+                            self.present_word += 1;
+                            self.present_pos = 0;
+
+                            // Switching to a vendor namespace, and we don't know how to handle
+                            // so we just skip it.
+                            let start = self.cursor.position() as usize;
+                            let end = start + 6;
+
+                            // The header lied about how long the body was
+                            if end > self.cursor.get_ref().len() {
+                                break Some(Err(Error::IncompleteError));
+                            }
+
+                            let data = &self.cursor.get_ref()[start..end];
+
+                            match VendorNamespace::from_bytes(data) {
+                                Ok(vns) => {
+                                    self.cursor
+                                        .set_position((end as u64) + (vns.skip_length as u64));
+                                    continue;
+                                }
+                                Err(err) => break Some(Err(err)),
+                            }
+                        }
+                        PRESENCE_EXT => continue,
+                        bit => match Kind::from_bit(bit) {
+                            Some(kind) => {
+                                let start = self.cursor.position() as usize;
+                                let end = start + kind.size() as usize;
+
+                                // The header lied about how long the body was
+                                if end > self.cursor.get_ref().len() {
+                                    break Some(Err(Error::IncompleteError));
+                                }
+
+                                let data = &self.cursor.get_ref()[start..end];
+                                self.cursor.set_position(end as u64);
+                                break Some(Ok((kind, data)));
+                            }
+                            None => break None,
+                        },
+                    }
                 }
+                None => break None,
             }
-            None => None,
         }
     }
 }
@@ -268,16 +319,6 @@ impl Radiotap {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn good_vendor() {
-        let frame = [
-            0, 0, 39, 0, 46, 72, 0, 192, 0, 0, 0, 128, 0, 0, 0, 160, 4, 0, 0, 0, 16, 2, 158, 9,
-            160, 0, 227, 5, 0, 0, 255, 255, 255, 255, 2, 0, 222, 173, 4,
-        ];
-
-        assert_eq!(Radiotap::from_bytes(&frame).unwrap().rate.unwrap(), 4);
-    }
 
     #[test]
     fn bad_version() {

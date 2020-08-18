@@ -1,101 +1,35 @@
-use crate::field::VendorNamespace;
-use crate::{Error, Result};
-
-/// The type of radiotap field.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub enum Kind {
-    Tsft,
-    Flags,
-    Rate,
-    Channel,
-    Fhss,
-    AntennaSignal,
-    AntennaNoise,
-    LockQuality,
-    TxAttenuation,
-    TxAttenuationDb,
-    TxPower,
-    Antenna,
-    AntennaSignalDb,
-    AntennaNoiseDb,
-    RxFlags,
-    TxFlags,
-    RtsRetries,
-    DataRetries,
-    XChannel,
-    Mcs,
-    AmpduStatus,
-    Vht,
-    Timestamp,
-    VendorNamespace(Option<VendorNamespace>),
-}
-
-impl Kind {
-    pub fn new(value: u8) -> Result<Self> {
-        Ok(match value {
-            0 => Self::Tsft,
-            1 => Self::Flags,
-            2 => Self::Rate,
-            3 => Self::Channel,
-            4 => Self::Fhss,
-            5 => Self::AntennaSignal,
-            6 => Self::AntennaNoise,
-            7 => Self::LockQuality,
-            8 => Self::TxAttenuation,
-            9 => Self::TxAttenuationDb,
-            10 => Self::TxPower,
-            11 => Self::Antenna,
-            12 => Self::AntennaSignalDb,
-            13 => Self::AntennaNoiseDb,
-            14 => Self::RxFlags,
-            15 => Self::TxFlags,
-            16 => Self::RtsRetries,
-            17 => Self::DataRetries,
-            18 => Self::XChannel,
-            19 => Self::Mcs,
-            20 => Self::AmpduStatus,
-            21 => Self::Vht,
-            22 => Self::Timestamp,
-            _ => {
-                return Err(Error::UnsupportedField);
-            }
-        })
-    }
-
-    /// Returns the align value for the field.
-    pub fn align(&self) -> u64 {
-        match self {
-            Self::Tsft | Self::Timestamp => 8,
-            Self::XChannel | Self::AmpduStatus => 4,
-            Self::Channel
-            | Self::Fhss
-            | Self::LockQuality
-            | Self::TxAttenuation
-            | Self::TxAttenuationDb
-            | Self::RxFlags
-            | Self::TxFlags
-            | Self::Vht
-            | Self::VendorNamespace(_) => 2,
-            _ => 1,
-        }
-    }
-
-    /// Returns the size of the field.
-    pub fn size(&self) -> usize {
-        match self {
-            Self::Vht | Self::Timestamp => 12,
-            Self::Tsft | Self::AmpduStatus | Self::XChannel => 8,
-            Self::VendorNamespace(_) => 6,
-            Self::Channel => 4,
-            Self::Mcs => 3,
-            Self::Fhss
-            | Self::LockQuality
-            | Self::TxAttenuation
-            | Self::TxAttenuationDb
-            | Self::RxFlags
-            | Self::TxFlags => 2,
-            _ => 1,
-        }
+impl_kind! {
+    /// The type of radiotap field.
+    #[derive(Debug, Clone, PartialEq)]
+    #[non_exhaustive]
+    pub enum Kind {
+        Tsft            { bit:  0, align: 8, size:  8 },
+        Flags           { bit:  1, align: 1, size:  1 },
+        Rate            { bit:  2, align: 1, size:  1 },
+        Channel         { bit:  3, align: 2, size:  4 },
+        Fhss            { bit:  4, align: 2, size:  2 },
+        AntennaSignal   { bit:  5, align: 1, size:  1 },
+        AntennaNoise    { bit:  6, align: 1, size:  1 },
+        LockQuality     { bit:  7, align: 2, size:  2 },
+        TxAttenuation   { bit:  8, align: 2, size:  2 },
+        TxAttenuationDb { bit:  9, align: 2, size:  2 },
+        TxPower         { bit: 10, align: 1, size:  1 },
+        Antenna         { bit: 11, align: 1, size:  1 },
+        AntennaSignalDb { bit: 12, align: 1, size:  1 },
+        AntennaNoiseDb  { bit: 13, align: 1, size:  1 },
+        RxFlags         { bit: 14, align: 2, size:  2 },
+        RtsRetries      { bit: 16, align: 1, size:  1 },
+        TxFlags         { bit: 15, align: 2, size:  2 },
+        DataRetries     { bit: 17, align: 1, size:  1 },
+        XChannel        { bit: 18, align: 4, size:  8 },
+        Mcs             { bit: 19, align: 1, size:  3 },
+        AmpduStatus     { bit: 20, align: 4, size:  8 },
+        Vht             { bit: 21, align: 2, size: 12 },
+        Timestamp       { bit: 22, align: 8, size: 12 },
+        He              { bit: 23, align: 8, size: 12 },
+        HeMu            { bit: 24, align: 8, size: 12 },
+        HeMuUser        { bit: 25, align: 8, size: 12 },
+        ZeroLenPsdu     { bit: 26, align: 1, size:  1 },
+        LSig            { bit: 27, align: 2, size:  4 },
     }
 }

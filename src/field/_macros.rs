@@ -6,6 +6,51 @@ macro_rules! ensure_length {
     };
 }
 
+macro_rules! impl_kind {
+    (
+        $(#[$outer:meta])*
+        pub enum $name:ident {
+            $(
+                $(#[$inner:ident $($args:tt)*])*
+                $variant:ident { bit: $bit:expr, align: $align:expr, size: $size:expr },
+            )+
+        }
+    ) => {
+        $(#[$outer])*
+        pub enum $name {
+            $(
+                $(#[$inner $($args)*])*
+                $variant,
+            )+
+        }
+
+        impl $name {
+            pub fn from_bit(bit: u32) -> Option<Self> {
+                match bit {
+                    $( $bit => Some(Self::$variant), )+
+                    _ => None
+                }
+            }
+
+            /// Returns the present bit value for the field.
+            pub fn bit(&self) -> u32 {
+                match self { $( Self::$variant => $bit, )+ }
+            }
+
+            /// Returns the alignment of the field.
+            pub fn align(&self) -> u32 {
+                match self { $( Self::$variant => $align, )+ }
+            }
+
+            /// Returns the size of the field.
+            pub fn size(&self) -> usize {
+                match self { $( Self::$variant => $size, )+ }
+            }
+        }
+
+    };
+}
+
 macro_rules! impl_enum {
     (
         $(#[$outer:meta])*
@@ -59,12 +104,6 @@ macro_rules! impl_newtype {
         pub struct $name($ty);
 
         impl_from_bytes_newtype!($name);
-
-        impl PartialEq<$ty> for $name {
-            fn eq(&self, other: &$ty) -> bool {
-                self.0.eq(other)
-            }
-        }
 
         impl $name {
             /// Consumes this field and returns the underlying value.

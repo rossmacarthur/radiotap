@@ -29,7 +29,7 @@ pub struct Header {
     /// The size of the radiotap header.
     pub size: usize,
     /// The fields present in the radiotap capture.
-    pub present: Vec<Kind>,
+    pub present: Vec<u32>,
 }
 
 impl FromBytes for Header {
@@ -50,48 +50,11 @@ impl FromBytes for Header {
         }
 
         let mut present;
-        let mut present_count = 0;
-        let mut vendor_namespace = false;
         let mut kinds = Vec::new();
 
         loop {
             present = cursor.read_u32::<LE>()?;
-
-            if !vendor_namespace {
-                for bit in 0..29 {
-                    if present.is_bit_set(bit) {
-                        match Kind::new(present_count * 32 + bit) {
-                            Ok(kind) => {
-                                kinds.push(kind);
-                            }
-                            Err(Error::UnsupportedField) => {
-                                // Does not matter, we will just parse the ones
-                                // we can
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    }
-                }
-            }
-
-            // Need to move to radiotap namespace
-            if present.is_bit_set(29) {
-                present_count = 0;
-                vendor_namespace = false;
-
-            // Need to move to vendor namespace
-            } else if present.is_bit_set(30) {
-                present_count = 0;
-                vendor_namespace = true;
-                // We'll figure out what namespace it is later, just use none
-                kinds.push(Kind::VendorNamespace(None))
-
-            // Need to stay in the same namespace
-            } else {
-                present_count += 1;
-            }
-
-            // More present words do not exist
+            kinds.push(present);
             if !present.is_bit_set(31) {
                 break;
             }
