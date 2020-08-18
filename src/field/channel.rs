@@ -2,7 +2,7 @@
 
 use super::*;
 
-bitflags! {
+impl_bitflags! {
     /// Flags describing the channel.
     pub struct Flags: u16 {
         /// Turbo channel.
@@ -12,30 +12,32 @@ bitflags! {
         /// Orthogonal Frequency-Division Multiplexing (OFDM) channel.
         const OFDM = 0x0040;
         /// 2 GHz spectrum channel.
-        const GHZ_2 = 0x0080;
+        const GHZ2 = 0x0080;
         /// 5 GHz spectrum channel.
-        const GHZ_5 = 0x0100;
+        const GHZ5 = 0x0100;
         /// Only passive scan allowed.
-        const DYNAMIC = 0x0400;
+        const PASSIVE = 0x0200;
         /// Dynamic CCK-OFDM channel.
-        const HALF = 0x4000;
+        const DYNAMIC = 0x0400;
         /// Gaussian Frequency Shift Keying (GFSK) channel.
+        const GFSK = 0x0800;
+        /// GSM (900MHz) channel.
+        const GSM = 0x1000;
+        /// Static Turbo channel.
+        const STURBO = 0x2000;
+        /// Half rate channel.
+        const HALF = 0x4000;
+        /// Quarter rate channel.
         const QUARTER = 0x8000;
     }
 }
 
 /// Channel information.
-///
-/// [Reference](http://www.radiotap.org/fields/Channel.html)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Channel {
-    /// The frequency in MHz.
     freq: u16,
-    // The channel flags.
     flags: Flags,
 }
-
-impl_from_bytes_bitflags!(Flags);
 
 impl FromBytes for Channel {
     fn from_bytes(bytes: Bytes) -> Result<Self> {
@@ -43,5 +45,17 @@ impl FromBytes for Channel {
         let freq = bytes[0..2].try_read()?;
         let flags = bytes[2..4].try_read()?;
         Ok(Self { freq, flags })
+    }
+}
+
+impl Channel {
+    /// Returns the channel frequency in MHz.
+    pub fn freq(&self) -> u16 {
+        self.freq
+    }
+
+    /// Returns flags describing the channel.
+    pub fn flags(&self) -> Flags {
+        self.flags
     }
 }

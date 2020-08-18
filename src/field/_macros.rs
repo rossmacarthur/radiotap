@@ -6,10 +6,42 @@ macro_rules! ensure_length {
     };
 }
 
+macro_rules! impl_enum {
+    (
+        $(#[$outer:meta])*
+        pub enum $name:ident: $ty:ty{
+            $(
+                $(#[$inner:ident $($args:tt)*])*
+                $variant:ident = $value:expr,
+            )+
+        }
+    ) => {
+        $(#[$outer])*
+        #[derive(Debug, Clone, PartialEq)]
+        pub enum $name {
+            $(
+                $(#[$inner $($args)*])*
+                $variant = $value,
+            )+
+        }
+
+        impl $name {
+            pub(crate) fn from_bits(bits: $ty) -> Option<Self> {
+                match bits {
+                    $(
+                        $value => Some(Self::$variant),
+                    )+
+                    _ => None
+                }
+            }
+        }
+    };
+}
+
 macro_rules! impl_from_bytes_newtype {
     ($ty:ty) => {
         impl FromBytes for $ty {
-            fn from_bytes(bytes: Bytes) -> Result<Self> {
+            fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
                 Ok(Self(bytes.try_read()?))
             }
         }
@@ -46,7 +78,7 @@ macro_rules! impl_newtype {
 macro_rules! impl_from_bytes_bitflags {
     ($ty:ty) => {
         impl FromBytes for $ty {
-            fn from_bytes(bytes: Bytes) -> Result<Self> {
+            fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
                 Ok(Self::from_bits_truncate(bytes.try_read()?))
             }
         }
@@ -63,7 +95,6 @@ macro_rules! impl_bitflags {
             )+
         }
     ) => {
-
         bitflags! {
             $(#[$outer])*
             pub struct $name: $ty {

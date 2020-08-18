@@ -2,58 +2,49 @@
 
 use super::*;
 
-bitflags! {
+impl_bitflags! {
     /// Extended flags describing the channel.
     pub struct Flags: u32 {
         /// Turbo channel.
-        const TURBO = 0x0000_0010;
+        const TURBO = 0x0010;
         /// Complementary Code Keying (CCK) channel.
-        const CCK = 0x0000_0020;
+        const CCK = 0x0020;
         /// Orthogonal Frequency-Division Multiplexing (OFDM) channel.
-        const OFDM = 0x0000_0040;
+        const OFDM = 0x0040;
         /// 2 GHz spectrum channel.
-        const GHZ_2 = 0x0000_0080;
+        const GHZ2 = 0x0080;
         /// 5 GHz spectrum channel.
-        const GHZ_5 = 0x0000_0100;
+        const GHZ5 = 0x0100;
         /// Only passive scan allowed.
-        const PASSIVE = 0x0000_0200;
+        const PASSIVE = 0x0200;
         /// Dynamic CCK-OFDM channel.
-        const DYNAMIC = 0x0000_0400;
+        const DYNAMIC = 0x0400;
         /// Gaussian Frequency Shift Keying (GFSK) channel.
-        const GFSK = 0x0000_0800;
-        /// GSM channel.
-        const GSM = 0x0000_1000;
+        const GFSK = 0x0800;
+        /// GSM (900MHz) channel.
+        const GSM = 0x1000;
         /// Static Turbo channel.
-        const TURBO_S = 0x0000_2000;
-        /// Half rate channel.
-        const HALF = 0x0000_4000;
-        /// Quarter rate channel.
-        const QUARTER = 0x0000_8000;
-        /// HT Channel (20MHz Channel Width).
+        const STURBO = 0x2000;
+        /// Half rate channel (10 MHz Channel Width).
+        const HALF = 0x4000;
+        /// Quarter rate channel (5 MHz Channel Width).
+        const QUARTER = 0x8000;
+        /// HT Channel (20 MHz Channel Width).
         const HT20 = 0x0001_0000;
-        /// HT Channel (40MHz Channel Width with Extension channel above).
+        /// HT Channel (40 MHz Channel Width with Extension channel above).
         const HT40U = 0x0002_0000;
-        /// HT Channel (40MHz Channel Width with Extension channel below).
+        /// HT Channel (40 MHz Channel Width with Extension channel below).
         const HT40D = 0x0004_0000;
     }
 }
 
 /// Extended channel information.
-///
-/// [Reference](https://www.radiotap.org/fields/XChannel.html)
 #[derive(Debug, Clone, PartialEq)]
 pub struct XChannel {
-    /// The channel flags.
     flags: Flags,
-    /// The frequency in MHz.
     freq: u16,
-    /// The channel number.
     channel: u8,
-    /// The max power.
-    max_power: u8,
 }
-
-impl_from_bytes_bitflags!(Flags);
 
 impl FromBytes for XChannel {
     fn from_bytes(bytes: Bytes) -> Result<Self> {
@@ -61,12 +52,27 @@ impl FromBytes for XChannel {
         let flags = bytes[0..4].try_read()?;
         let freq = bytes[4..6].try_read()?;
         let channel = bytes[6..7].try_read()?;
-        let max_power = bytes[7..8].try_read()?;
         Ok(Self {
             flags,
             freq,
             channel,
-            max_power,
         })
+    }
+}
+
+impl XChannel {
+    /// Returns flags describing the channel.
+    pub fn flags(&self) -> Flags {
+        self.flags
+    }
+
+    /// Returns the channel frequency in MHz.
+    pub fn freq(&self) -> u16 {
+        self.freq
+    }
+
+    /// Returns the channel number.
+    pub fn channel(&self) -> u8 {
+        self.channel
     }
 }

@@ -4,32 +4,26 @@ use super::*;
 
 use crate::util::BoolExt;
 
-/// The bandwidth.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Bandwidth {
-    BW20,
-    BW40,
-    BW20L,
-    BW20U,
+impl_enum! {
+    /// The bandwidth.
+    pub enum Bandwidth: u8 {
+        BW20 = 0,
+        BW40 = 1,
+        BW20L = 2,
+        BW20U = 3,
+    }
 }
 
-/// The HT format.
-#[derive(Debug, Clone, PartialEq)]
-pub enum HtFormat {
-    Mixed,
-    Greenfield,
-}
-
-/// Forward error correction type.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Fec {
-    /// Binary convolutional coding.
-    Bcc,
-    /// Low-density parity-check.
-    Ldpc,
+impl_enum! {
+    /// The HT format.
+    pub enum Format: u8 {
+        Mixed = 0,
+        Greenfield = 1,
+    }
 }
 
 impl_bitflags! {
+    /// Indicates what MCS information is known.
     pub struct Known: u8 {
         /// The bandwidth is known.
         const BW = 0x01;
@@ -52,11 +46,10 @@ impl_bitflags! {
 
 /// The MCS information.
 ///
-/// The IEEE 802.11n data rate index. Usually only one of the
-/// [Rate](../struct.Rate.html), [MCS](struct.Mcs.html), and
-/// [VHT](../vht/struct.Vht.html) fields is present.
+/// The IEEE 802.11n data rate index.
 ///
-/// [Reference](http://www.radiotap.org/fields/MCS.html)
+/// Other rate fields: [Rate](../struct.Rate.html),
+/// [VHT](../vht/struct.Vht.html)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Mcs {
     /// Indicates which information is known.
@@ -82,63 +75,45 @@ impl FromBytes for Mcs {
 }
 
 impl Mcs {
-    /// The bandwidth.
+    /// Returns the bandwidth.
     pub fn bandwidth(&self) -> Option<Bandwidth> {
         self.known
             .contains(Known::BW)
-            .into_option(|| match self.flags & 0b11 {
-                0 => Bandwidth::BW20,
-                1 => Bandwidth::BW40,
-                2 => Bandwidth::BW20L,
-                3 => Bandwidth::BW20U,
-                _ => unreachable!(),
-            })
+            .some(|| Bandwidth::from_bits(self.flags & 0b11).unwrap())
     }
 
-    /// The guard interval.
+    /// Returns the guard interval.
     pub fn guard_interval(&self) -> Option<GuardInterval> {
-        self.known.contains(Known::GI).into_option(|| {
-            if self.flags & 0x04 > 0 {
-                GuardInterval::Short
-            } else {
-                GuardInterval::Long
-            }
-        })
+        self.known
+            .contains(Known::GI)
+            .some(|| GuardInterval::from_bits((self.flags & 0x04) >> 2).unwrap())
     }
 
-    /// The HT format.
-    pub fn ht_format(&self) -> Option<HtFormat> {
-        self.known.contains(Known::FMT).into_option(|| {
-            if self.flags & 0x08 > 0 {
-                HtFormat::Greenfield
-            } else {
-                HtFormat::Mixed
-            }
-        })
+    /// Returns the HT format.
+    pub fn format(&self) -> Option<Format> {
+        self.known
+            .contains(Known::FMT)
+            .some(|| Format::from_bits((self.flags & 0x08) >> 3).unwrap())
     }
 
-    /// The FEC type.
+    /// Returns the FEC type.
     pub fn fec(&self) -> Option<Fec> {
-        self.known.contains(Known::FEC).into_option(|| {
-            if self.flags & 0x10 > 0 {
-                Fec::Ldpc
-            } else {
-                Fec::Bcc
-            }
-        })
+        self.known
+            .contains(Known::FEC)
+            .some(|| Fec::from_bits((self.flags & 0x10) >> 4).unwrap())
     }
 
     /// Returns the number of STBCs.
     pub fn stbc(&self) -> Option<u8> {
         self.known
             .contains(Known::STBC)
-            .into_option(|| self.flags & 0x60 >> 5)
+            .some(|| (self.flags & 0x60) >> 5)
     }
 
     /// Return the number of extension spatial streams.
     pub fn ness(&self) -> Option<u8> {
         self.known
             .contains(Known::NESS)
-            .into_option(|| self.known.bits() & 0x80 >> 6 | self.flags & 0x80 >> 7)
+            .some(|| (self.known.bits() & 0x80) >> 6 | (self.flags & 0x80) >> 7)
     }
 }

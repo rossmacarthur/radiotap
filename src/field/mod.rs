@@ -135,14 +135,35 @@ impl FromBytes for VendorNamespace {
 // Common types
 /////////////////////////////////////////////////////////////////////////
 
-/// The guard interval.
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub enum GuardInterval {
-    /// 800 ns.
-    Long,
-    /// 400 ns.
-    Short,
+impl_enum! {
+    /// The guard interval.
+    #[non_exhaustive]
+    pub enum GuardInterval: u8 {
+        /// 800 ns.
+        Long = 0,
+        /// 400 ns.
+        Short = 1,
+    }
+}
+
+impl From<bool> for GuardInterval {
+    fn from(b: bool) -> Self {
+        match b {
+            false => Self::Long,
+            true => Self::Short,
+        }
+    }
+}
+
+impl_enum! {
+    #[derive(Copy)]
+    /// Forward error correction type.
+    pub enum Fec: u8 {
+        /// Binary convolutional coding.
+        Bcc = 0,
+        /// Low-density parity-check.
+        Ldpc = 1,
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -169,27 +190,33 @@ impl_newtype! {
     /// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization
     /// Function Timer when the first bit of the MPDU arrived at the MAC. For
     /// received frames only.
-    ///
-    /// [Reference](http://www.radiotap.org/fields/TSFT.html)
     pub struct Tsft(u64);
 }
 
 impl_newtype! {
-    /// Tx/Rx data rate.
+    /// Tx/Rx legacy data rate.
     ///
-    /// This is the legacy data rate. Usually only one of the
-    /// [Rate](struct.Rate.html), [MCS](./mcs/struct.Mcs.html), and
-    /// [VHT](./vht/struct.Vht.html) fields are present.
+    /// Other rate fields: [MCS](./mcs/struct.Mcs.html),
+    /// [VHT](./vht/struct.Vht.html)
+    ///
+    /// The raw value's unit is 500 Kbps. Use the
+    /// [`as_mbps`](struct.Rate.html#method.as_mbps) function to get the rate in
+    /// megabits per second.
     pub struct Rate(u8);
+}
+
+impl Rate {
+    /// Returns the data rate in megabits per second.
+    pub fn as_mbps(&self) -> f32 {
+        f32::from(self.0) / 2.0
+    }
 }
 
 impl_newtype! {
     /// RF signal power at the antenna in dBm.
     ///
     /// It indicates the RF signal power at the antenna, in decibels difference from
-    /// 1mW.
-    ///
-    /// [Reference](http://www.radiotap.org/fields/Antenna%20signal.html)
+    /// one milliwatt.
     pub struct AntennaSignal(i8);
 }
 
@@ -198,18 +225,14 @@ impl_newtype! {
     ///
     /// It indicates the RF signal power at the antenna, in decibels difference from
     /// an arbitrary, fixed reference.
-    ///
-    /// [Reference](http://www.radiotap.org/fields/dB%20antenna%20signal.html)
     pub struct AntennaSignalDb(u8);
 }
 
 impl_newtype! {
     /// RF noise power at the antenna in dBm.
     ///
-    /// It indicates the RF signal noise at the antenna, in decibels  difference
-    /// from 1mW.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/Antenna%20noise.html)
+    /// It indicates the RF signal noise at the antenna, in decibels difference
+    /// from one milliwatt.
     pub struct AntennaNoise(i8);
 }
 
@@ -218,8 +241,6 @@ impl_newtype! {
     ///
     /// It indicates the RF signal noise at the antenna, in decibels difference from
     /// an arbitrary, fixed reference.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/dB%20antenna%20noise.html)
     pub struct AntennaNoiseDb(u8);
 }
 
@@ -228,17 +249,13 @@ impl_newtype! {
     ///
     /// Monotonically nondecreasing with "better" lock strength. Called "Signal
     /// Quality" in datasheets.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/Lock%20quality.html)
     pub struct LockQuality(u16);
 }
 
 impl_newtype! {
     /// Transmit power expressed as unitless distance from max power.
     ///
-    /// 0 is max power. Monotonically nondecreasing with lower power levels.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/TX%20attenuation.html)
+    /// Zero is max power. Monotonically nondecreasing with lower power levels.
     pub struct TxAttenuation(u16);
 }
 
@@ -246,18 +263,15 @@ impl_newtype! {
     /// Transmit power expressed as decibel distance from max power set at factory
     /// calibration.
     ///
-    /// 0 is max power. Monotonically nondecreasing with lower power levels.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/dB%20TX%20attenuation.html)
+    /// Zero is max power. Monotonically nondecreasing with lower power levels.
     pub struct TxAttenuationDb(u16);
 }
 
 impl_newtype! {
     /// Transmit power in dBm.
     ///
-    /// This is the absolute power level measured at the antenna port.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/dBm%20TX%20power.html)
+    /// This is the absolute power level measured at the antenna port in decibels
+    /// difference from one milliwatt.
     pub struct TxPower(i8);
 }
 
@@ -265,30 +279,12 @@ impl_newtype! {
     /// The antenna index.
     ///
     /// Unitless indication of the Rx/Tx antenna for this packet. The first antenna
-    /// is antenna 0.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/Antenna.html)
+    /// is antenna zero.
     pub struct Antenna(u8);
-}
-
-impl_newtype! {
-    /// Number of RTS retries a transmitted frame used.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/RTS%20retries.html)
-    pub struct RtsRetries(u8);
-}
-
-impl_newtype! {
-    /// Number of data retries a transmitted frame used.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/data%20retries.html)
-    pub struct DataRetries(u8);
 }
 
 impl_bitflags! {
     /// Properties of transmitted and received frames.
-    ///
-    /// [Reference](http://www.radiotap.org/fields/Flags.html)
     pub struct Flags: u8 {
         /// The frame was sent/received during CFP.
         const CFP = 0x01;
@@ -298,22 +294,19 @@ impl_bitflags! {
         const WEP = 0x04;
         /// The frame was sent/received with fragmentation.
         const FRAG = 0x08;
-        /// The frame includes FCS.
+        /// The frame includes FCS at the end.
         const FCS = 0x10;
-        /// The frame has padding between 802.11 header and payload (to 32-bit
-        /// boundary).
+        /// The frame has padding between 802.11 header and payload.
         const DATA_PAD = 0x20;
         /// The frame failed FCS check.
         const BAD_FCS = 0x40;
-        /// The frame used short guard interval (HT).
-        const SGI = 0x80;
+        /// The frame was sent/received with HT short Guard Interval.
+        const SHORT_GI = 0x80;
     }
 }
 
 impl_bitflags! {
     /// Properties of received frames.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/RX%20flags.html)
     pub struct RxFlags: u16 {
         /// PLCP CRC check failed.
         const BAD_PLCP = 0x0002;
@@ -322,13 +315,11 @@ impl_bitflags! {
 
 impl_bitflags! {
     /// Properties of transmitted frames.
-    ///
-    /// [Reference](https://www.radiotap.org/fields/TX%20flags.html)
     pub struct TxFlags: u16 {
         /// Transmission failed due to excessive retries.
         const FAIL = 0x0001;
         /// Transmission used CTS-to-self protection.
-        const CTX = 0x0002;
+        const CTS = 0x0002;
         /// Transmission used RTS/CTS handshake.
         const RTS = 0x0004;
         /// Transmission shall not expect an ACK frame and not retry when no ACK is
@@ -341,8 +332,6 @@ impl_bitflags! {
 }
 
 /// The hop set and pattern for frequency-hopping radios.
-///
-/// [Reference](http://www.radiotap.org/fields/FHSS.html)
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fhss {
     hop_set: u8,
