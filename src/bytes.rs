@@ -30,7 +30,7 @@ macro_rules! impl_from_bytes_primitive {
     ($ty:ty) => {
         impl FromBytes for $ty {
             fn from_bytes(bytes: Bytes) -> Result<Self> {
-                Ok(<$ty>::from_le_bytes(
+                Ok(Self::from_le_bytes(
                     bytes
                         .try_into()
                         .map_err(|_| crate::Error::InvalidFieldLength)?,

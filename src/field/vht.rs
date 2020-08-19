@@ -217,8 +217,8 @@ impl Vht {
 
     /// Returns the VHT users.
     pub fn users(&self) -> [Option<User>; 4] {
-        let mut users = <[_; 4]>::default();
-        for i in 0..4 {
+        let mut users: [Option<User>; 4] = Default::default();
+        for (i, user) in users.iter_mut().enumerate() {
             let mcs_nss = self.mcs_nss[i];
             let nss = mcs_nss & 0x0f;
             if nss == 0 {
@@ -229,12 +229,12 @@ impl Vht {
             let nsts = nss << stbc;
             let id = i as u8;
             let fec = ((self.coding & (1 << id)) > 0).into();
-            users[i] = Some(User {
+            user.replace(User {
                 index,
                 nss,
                 nsts,
                 fec,
-            })
+            });
         }
         users
     }

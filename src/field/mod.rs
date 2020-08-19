@@ -312,8 +312,8 @@ pub struct Fhss {
 impl FromBytes for Fhss {
     fn from_bytes(bytes: Bytes) -> Result<Self> {
         ensure_length!(bytes.len() == Kind::Fhss.size());
-        let hop_set = bytes[0].into();
-        let hop_pattern = bytes[1].into();
+        let hop_set = bytes[0];
+        let hop_pattern = bytes[1];
         Ok(Self {
             hop_set,
             hop_pattern,

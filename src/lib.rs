@@ -1,21 +1,4 @@
 //! A parser for the [radiotap](http://www.radiotap.org/) capture format.
-//!
-//! # Usage
-//!
-//! The `Radiotap::from_bytes(&capture)` constructor will parse all present
-//! fields into a [Radiotap](struct.Radiotap.html) struct:
-//!
-//! ```
-//! # use radiotap::Radiotap;
-//! let capture = [
-//!     0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-//!     166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-//!     4, 115, 0, 0, 0, 1, 63, 0, 0,
-//! ];
-//!
-//! let radiotap = Radiotap::from_bytes(&capture).unwrap();
-//! println!("{:?}", radiotap.vht);
-//! ```
 
 mod bytes;
 pub mod field;
