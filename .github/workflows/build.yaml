@@ -26,7 +26,7 @@ jobs:
       run: cargo fmt -- --check
 
     - name: Clippy
-      run: cargo clippy --workspace -- -D warnings -D clippy::use-self -D clippy::items-after-statements -D clippy::if-not-else
+      run: cargo clippy --workspace -- -D warnings -D clippy::items-after-statements -D clippy::if-not-else
 
     - name: Test
       run: cargo test

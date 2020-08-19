@@ -5,7 +5,6 @@ use std::time::SystemTime;
 
 use thiserror::Error;
 
-use crate::field::Kind;
 use crate::prelude::*;
 
 impl_enum! {
@@ -67,12 +66,11 @@ pub struct Timestamp {
 }
 
 impl FromBytes for Timestamp {
-    fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
-        ensure_length!(bytes.len() == Kind::Timestamp.size());
-        let ts = bytes[0..8].try_read()?;
-        let accuracy = bytes[8..10].try_read()?;
-        let unit_position = bytes[10..11].try_read()?;
-        let flags = bytes[11..12].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> crate::Result<Self> {
+        let ts = bytes.read()?;
+        let accuracy = bytes.read()?;
+        let unit_position = bytes.read()?;
+        let flags = bytes.read()?;
         Ok(Self {
             ts,
             accuracy,

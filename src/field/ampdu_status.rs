@@ -1,6 +1,5 @@
 //! Defines the A-MPDU Status field.
 
-use crate::field::Kind;
 use crate::prelude::*;
 use crate::Result;
 
@@ -38,11 +37,10 @@ pub struct AmpduStatus {
 }
 
 impl FromBytes for AmpduStatus {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        ensure_length!(bytes.len() == Kind::AmpduStatus.size());
-        let reference = bytes[0..4].try_read()?;
-        let flags = bytes[4..6].try_read()?;
-        let delim_crc = bytes[6..7].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let reference = bytes.read()?;
+        let flags = bytes.read()?;
+        let delim_crc = bytes.read()?;
         Ok(Self {
             reference,
             flags,

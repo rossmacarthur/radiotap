@@ -1,6 +1,5 @@
 //! Defines the XChannel field.
 
-use crate::field::Kind;
 use crate::prelude::*;
 use crate::Result;
 
@@ -49,11 +48,10 @@ pub struct XChannel {
 }
 
 impl FromBytes for XChannel {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        ensure_length!(bytes.len() == Kind::XChannel.size());
-        let flags = bytes[0..4].try_read()?;
-        let freq = bytes[4..6].try_read()?;
-        let channel = bytes[6..7].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let flags = bytes.read()?;
+        let freq = bytes.read()?;
+        let channel = bytes.read()?;
         Ok(Self {
             flags,
             freq,

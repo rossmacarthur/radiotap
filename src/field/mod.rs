@@ -4,92 +4,115 @@
 
 #[macro_use]
 mod _macros;
-mod kind;
 
-use std::io::{Cursor, Read};
-
-use bitops::BitOps;
-use byteorder::{ReadBytesExt, LE};
-
-pub use crate::field::kind::Kind;
 use crate::prelude::*;
-use crate::{Error, Oui, Result};
+use crate::Result;
+
+/// An organizationally unique identifier.
+pub type Oui = [u8; 3];
 
 /////////////////////////////////////////////////////////////////////////
-// Special fields
+// The type of radiotap field.
 /////////////////////////////////////////////////////////////////////////
 
-/// The radiotap header, contained in all radiotap captures.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Header {
-    /// The radiotap version, only version 0 is supported.
-    pub version: u8,
-    /// The length of the entire radiotap capture.
-    pub length: usize,
-    /// The size of the radiotap header.
-    pub size: usize,
-    /// The fields present in the radiotap capture.
-    pub present: Vec<u32>,
+/// Defines a kind of radiotap field.
+///
+/// Vendor namespaces need to implement this in order to be able to use the
+/// iterator to parse their fields.
+pub trait Kind {
+    /// Returns the alignment of the field.
+    fn align(&self) -> usize;
+
+    /// Returns the size of the field.
+    fn size(&self) -> usize;
 }
 
-impl FromBytes for Header {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        let mut cursor = Cursor::new(bytes);
-
-        let version = cursor.read_u8()?;
-        if version != 0 {
-            // We only support version 0
-            return Err(Error::UnsupportedVersion);
-        }
-
-        cursor.read_u8()?; // Account for 1 byte padding field
-
-        let length = cursor.read_u16::<LE>()?;
-        if bytes.len() < length as usize {
-            return Err(Error::InvalidLength);
-        }
-
-        let mut present;
-        let mut kinds = Vec::new();
-
-        loop {
-            present = cursor.read_u32::<LE>()?;
-            kinds.push(present);
-            if !present.is_bit_set(31) {
-                break;
-            }
-        }
-
-        Ok(Self {
-            version,
-            length: length as usize,
-            size: cursor.position() as usize,
-            present: kinds,
-        })
+impl_kind! {
+    /// The type of radiotap field.
+    ///
+    /// Each variant corresponds to unique field in the Radiotap capture.
+    /// [`Kind`](trait.Kind.html) is implemented to describe the alignment
+    /// and size of each field, so that the iterator knows how to handle it.
+    ///
+    /// Not all of these types are parsed by this crate. The ones that have a
+    /// corresponding field have the identical name in this module.
+    #[derive(Debug, Clone, PartialEq)]
+    #[non_exhaustive]
+    pub enum Type {
+        Tsft            { bit:  0, align: 8, size:  8 },
+        Flags           { bit:  1, align: 1, size:  1 },
+        Rate            { bit:  2, align: 1, size:  1 },
+        Channel         { bit:  3, align: 2, size:  4 },
+        Fhss            { bit:  4, align: 2, size:  2 },
+        AntennaSignal   { bit:  5, align: 1, size:  1 },
+        AntennaNoise    { bit:  6, align: 1, size:  1 },
+        LockQuality     { bit:  7, align: 2, size:  2 },
+        TxAttenuation   { bit:  8, align: 2, size:  2 },
+        TxAttenuationDb { bit:  9, align: 2, size:  2 },
+        TxPower         { bit: 10, align: 1, size:  1 },
+        Antenna         { bit: 11, align: 1, size:  1 },
+        AntennaSignalDb { bit: 12, align: 1, size:  1 },
+        AntennaNoiseDb  { bit: 13, align: 1, size:  1 },
+        RxFlags         { bit: 14, align: 2, size:  2 },
+        TxFlags         { bit: 15, align: 2, size:  2 },
+        RtsRetries      { bit: 16, align: 1, size:  1 },
+        DataRetries     { bit: 17, align: 1, size:  1 },
+        XChannel        { bit: 18, align: 4, size:  8 },
+        Mcs             { bit: 19, align: 1, size:  3 },
+        AmpduStatus     { bit: 20, align: 4, size:  8 },
+        Vht             { bit: 21, align: 2, size: 12 },
+        Timestamp       { bit: 22, align: 8, size: 12 },
+        He              { bit: 23, align: 2, size: 12 },
+        HeMu            { bit: 24, align: 2, size: 12 },
+        HeMuUser        { bit: 25, align: 2, size:  6 },
+        ZeroLenPsdu     { bit: 26, align: 1, size:  1 },
+        LSig            { bit: 27, align: 2, size:  4 },
     }
 }
 
 /////////////////////////////////////////////////////////////////////////
+// Vendor namespace field
+/////////////////////////////////////////////////////////////////////////
 
+/// A special field that describes a vendor namespace within a radiotap capture.
 #[derive(Debug, Clone, PartialEq)]
 pub struct VendorNamespace {
-    pub oui: Oui,
-    pub sub_namespace: u8,
-    pub skip_length: u16,
+    oui: Oui,
+    sub_ns: u8,
+    skip_length: u16,
 }
 
 impl FromBytes for VendorNamespace {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        let mut cursor = Cursor::new(bytes);
-        let mut oui = [0; 3];
-        cursor.read_exact(&mut oui)?;
-        let sub_namespace = cursor.read_u8()?;
-        let skip_length = cursor.read_u16::<LE>()?;
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let oui = bytes.read()?;
+        let sub_ns = bytes.read()?;
+        let skip_length = bytes.read()?;
         Ok(Self {
             oui,
-            sub_namespace,
+            sub_ns,
             skip_length,
         })
+    }
+}
+
+impl VendorNamespace {
+    /// An organizationally unique identifier for the vendor.
+    ///
+    /// Note: this not unique to the capture, there could be multiple vendor
+    /// namespaces with this OUI.
+    pub fn oui(&self) -> Oui {
+        self.oui
+    }
+
+    /// The sub-namespace of this vendor namespace.
+    pub fn sub_ns(&self) -> u8 {
+        self.sub_ns
+    }
+
+    /// Specifies the number of bytes following this field that belong to this
+    /// vendor namespace.
+    pub fn skip_length(&self) -> usize {
+        self.skip_length.into()
     }
 }
 
@@ -310,10 +333,9 @@ pub struct Fhss {
 }
 
 impl FromBytes for Fhss {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        ensure_length!(bytes.len() == Kind::Fhss.size());
-        let hop_set = bytes[0];
-        let hop_pattern = bytes[1];
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let hop_set = bytes.read()?;
+        let hop_pattern = bytes.read()?;
         Ok(Self {
             hop_set,
             hop_pattern,

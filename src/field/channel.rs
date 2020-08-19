@@ -1,6 +1,5 @@
 //! Defines the Channel field.
 
-use crate::field::Kind;
 use crate::prelude::*;
 use crate::Result;
 
@@ -42,10 +41,9 @@ pub struct Channel {
 }
 
 impl FromBytes for Channel {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        ensure_length!(bytes.len() == Kind::Channel.size());
-        let freq = bytes[0..2].try_read()?;
-        let flags = bytes[2..4].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let freq = bytes.read()?;
+        let flags = bytes.read()?;
         Ok(Self { freq, flags })
     }
 }

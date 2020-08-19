@@ -1,6 +1,6 @@
 //! Defines the MCS field.
 
-use crate::field::{Fec, GuardInterval, Kind};
+use crate::field::{Fec, GuardInterval};
 use crate::prelude::*;
 use crate::Result;
 
@@ -100,11 +100,10 @@ impl From<bool> for Format {
 }
 
 impl FromBytes for Mcs {
-    fn from_bytes(bytes: Bytes) -> Result<Self> {
-        ensure_length!(bytes.len() == Kind::Mcs.size());
-        let known = bytes[0..1].try_read()?;
-        let flags = bytes[1..2].try_read()?;
-        let index = bytes[2..3].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        let known = bytes.read()?;
+        let flags = bytes.read()?;
+        let index = bytes.read()?;
         Ok(Self {
             known,
             flags,

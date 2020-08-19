@@ -4,7 +4,7 @@ use std::result::Result;
 
 use thiserror::Error;
 
-use crate::field::{Fec, GuardInterval, Kind};
+use crate::field::{Fec, GuardInterval};
 use crate::prelude::*;
 
 /// An error returned when parsing a [`Bandwidth`](enum.Bandwidth.html) from the
@@ -113,17 +113,6 @@ pub struct Vht {
     partial_aid: u16,
 }
 
-impl FromBytes for [u8; 4] {
-    fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
-        Ok([
-            bytes[0..1].try_read()?,
-            bytes[1..2].try_read()?,
-            bytes[2..3].try_read()?,
-            bytes[3..4].try_read()?,
-        ])
-    }
-}
-
 impl User {
     /// Returns the VHT index (1 - 9).
     pub fn index(&self) -> u8 {
@@ -147,15 +136,14 @@ impl User {
 }
 
 impl FromBytes for Vht {
-    fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
-        ensure_length!(bytes.len() == Kind::Vht.size());
-        let known = bytes[0..2].try_read()?;
-        let flags = bytes[2..3].try_read()?;
-        let bandwidth = bytes[3..4].try_read()?;
-        let mcs_nss = bytes[4..8].try_read()?;
-        let coding = bytes[8..9].try_read()?;
-        let group_id = bytes[9..10].try_read()?;
-        let partial_aid = bytes[10..12].try_read()?;
+    fn from_bytes(bytes: &mut Bytes) -> crate::Result<Self> {
+        let known = bytes.read()?;
+        let flags = bytes.read()?;
+        let bandwidth = bytes.read()?;
+        let mcs_nss = bytes.read()?;
+        let coding = bytes.read()?;
+        let group_id = bytes.read()?;
+        let partial_aid = bytes.read()?;
         Ok(Self {
             known,
             flags,

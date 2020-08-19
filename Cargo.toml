@@ -12,8 +12,6 @@ version = "1.3.0"
 
 [dependencies]
 bitflags = "1.2.1"
-bitops = "0.1.0"
-byteorder = "1.3.4"
 thiserror = "1.0.20"
 
 [dev-dependencies]

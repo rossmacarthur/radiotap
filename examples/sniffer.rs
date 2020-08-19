@@ -1,10 +1,14 @@
 //! This example opens a packet capture on the given interface, and prints out
 //! the Radiotap capture for the first 100 captured packets.
+//!
+//! On some macOS systems you might need to first put the Wi-Fi interface into
 
 use std::env;
 
+const DLT_IEEE802_11_RADIO: i32 = 127;
+
 fn main() {
-    // Use first argument interface if passed in, else default to "en0"
+    // Use first argument interface if passed in, else default to "en0" or "wlan0"
     let device = if let Some(arg) = env::args().nth(1) {
         arg
     } else {
@@ -20,29 +24,27 @@ fn main() {
     let mut cap = pcap::Capture::from_device(&device[..])
         .unwrap()
         .timeout(1)
-        .rfmon(true)
+        .rfmon(cfg!(target_os = "macos"))
         .open()
         .unwrap();
-    cap.set_datalink(pcap::Linktype(127)).unwrap(); // DLT_IEEE802_11_RADIO = 127
+    cap.set_datalink(pcap::Linktype(DLT_IEEE802_11_RADIO))
+        .unwrap();
 
     let mut count = 0;
     // Print out the first 100 Radiotap headers of packets
     while count < 100 {
         // Get a packet from the interface
         match cap.next() {
-            // We captured a packet
             Ok(packet) => {
-                // Parse the radiotap header of the packet
-                let radiotap_header = radiotap::Radiotap::from_bytes(&packet);
-                // If it parsed correctly, then print out the radiotap header
-                if radiotap_header.is_ok() {
-                    println!("{:?}\n", radiotap_header);
+                // Parse the radiotap header of the packet!
+                if let Ok(header) = radiotap::parse(&packet) {
+                    println!("{:?}\n", header);
                     count += 1;
                 }
             }
-            // There were no packets on the interface before the timeout
+
             Err(pcap::Error::TimeoutExpired) => continue,
-            // There was an unknown error
+
             Err(e) => {
                 println!("Unexpected error: {:?}", e);
                 break;

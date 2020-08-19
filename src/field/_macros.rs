@@ -1,11 +1,3 @@
-macro_rules! ensure_length {
-    ($cond:expr) => {
-        if !$cond {
-            return Err(crate::Error::InvalidFieldLength);
-        }
-    };
-}
-
 macro_rules! impl_kind {
     (
         $(#[$outer:meta])*
@@ -25,6 +17,7 @@ macro_rules! impl_kind {
         }
 
         impl $name {
+            /// Construct a new type from a bit. `None` if unknown.
             pub fn from_bit(bit: u32) -> Option<Self> {
                 match bit {
                     $( $bit => Some(Self::$variant), )+
@@ -32,18 +25,20 @@ macro_rules! impl_kind {
                 }
             }
 
-            /// Returns the present bit value for the field.
+            /// Returns the present bit for the type.
             pub fn bit(&self) -> u32 {
                 match self { $( Self::$variant => $bit, )+ }
             }
+        }
 
+        impl crate::Kind for $name {
             /// Returns the alignment of the field.
-            pub fn align(&self) -> u32 {
+            fn align(&self) -> usize {
                 match self { $( Self::$variant => $align, )+ }
             }
 
             /// Returns the size of the field.
-            pub fn size(&self) -> usize {
+            fn size(&self) -> usize {
                 match self { $( Self::$variant => $size, )+ }
             }
         }
@@ -84,16 +79,6 @@ macro_rules! impl_enum {
     };
 }
 
-macro_rules! impl_from_bytes_newtype {
-    ($ty:ty) => {
-        impl FromBytes for $ty {
-            fn from_bytes(bytes: Bytes) -> crate::Result<Self> {
-                Ok(Self(bytes.try_read()?))
-            }
-        }
-    };
-}
-
 macro_rules! impl_newtype {
     (
         $(#[$outer:meta])*
@@ -101,25 +86,19 @@ macro_rules! impl_newtype {
     ) => {
         $(#[$outer])*
         #[derive(Debug, Clone, PartialEq)]
-        pub struct $name($ty);
+        pub struct $name(pub(crate) $ty);
 
-        impl_from_bytes_newtype!($name);
+        impl FromBytes for $name {
+            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::Result<Self> {
+                bytes.read().map(Self)
+            }
+        }
 
         impl $name {
             /// Consumes this field and returns the underlying value.
             #[inline]
             pub const fn into_inner(self) -> $ty {
                 self.0
-            }
-        }
-    };
-}
-
-macro_rules! impl_from_bytes_bitflags {
-    ($ty:ty) => {
-        impl crate::bytes::FromBytes for $ty {
-            fn from_bytes(bytes: crate::bytes::Bytes) -> crate::Result<Self> {
-                Ok(Self::from_bits_truncate(bytes.try_read()?))
             }
         }
     };
@@ -145,7 +124,11 @@ macro_rules! impl_bitflags {
             }
         }
 
-        impl_from_bytes_bitflags!($name);
+        impl crate::bytes::FromBytes for $name {
+            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::Result<Self> {
+                bytes.read().map(Self::from_bits_truncate)
+            }
+        }
 
         impl $name {
             /// Consumes this field and returns the underlying value.
