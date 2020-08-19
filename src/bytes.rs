@@ -17,13 +17,16 @@ pub struct Bytes<'a> {
 /// to read a custom field from the radiotap iterator then you will need to
 /// implement it.
 ///
+/// Integers that implement this trait are always parsed as little-endian.
+///
 /// # Examples
 ///
 /// In the following example we parse a copy of the built-in
 /// [`Rate`](field/struct.Rate.html) field.
 ///
 /// ```rust
-/// use radiotap::{Bytes, FromBytes, Result};
+/// use radiotap::Result;
+/// use radiotap::bytes::{Bytes, FromBytes};
 ///
 /// struct MyRate {
 ///     value: u8
@@ -123,11 +126,11 @@ impl<'a> Bytes<'a> {
     }
 
     /// Allows types implementing [`FromBytes`](trait.FromBytes.html) to be
-    /// easily read from this bytes.
+    /// easily read from these bytes.
     ///
     /// # Errors
     ///
-    /// If there is not enough bytes remaining to take the action required.
+    /// If there is not enough bytes remaining to read the type.
     pub fn read<T: FromBytes>(&mut self) -> Result<T> {
         T::from_bytes(self)
     }

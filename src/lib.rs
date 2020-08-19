@@ -1,4 +1,59 @@
 //! A parser for the [radiotap](http://www.radiotap.org/) capture format.
+//!
+//! # Examples
+//!
+//! ### Parsing all fields
+//!
+//! The easiest way to use this crate is to parse a slice of bytes into a
+//! [`Radiotap`](struct.Radiotap.html) struct.
+//!
+//! ```
+//! // a capture off the wire
+//! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
+//! # ];
+//!
+//! // parse the radiotap header from the capture into a `Radiotap` struct
+//! let header = radiotap::parse(capture).unwrap();
+//!
+//! // get the length of the entire header
+//! let length = header.length();
+//!
+//! // unpack the desired parsed fields
+//! let radiotap::Radiotap { tsft, rate, .. } = header;
+//!
+//! if let Some(tsft) = tsft {
+//!     assert_eq!(tsft.into_inner(), 0x12345678);
+//! }
+//! # else { panic!("expected TSFT field") }
+//!
+//! if let Some(rate) = rate {
+//!     assert_eq!(rate.to_mbps(), 24.0);
+//! }
+//! # else { panic!("expected Rate field") }
+//!
+//! // using the length we can get the rest of the capture
+//! // i.e. IEEE 802.11 header and body
+//! let rest = &capture[length..];
+//! ```
+//!
+//! ### Parsing no fields
+//!
+//! This crate can also be used to skip over the radiotap header without parsing
+//! any of the fields.
+//!
+//! ```
+//! // a capture off the wire
+//! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
+//! # ];
+//!
+//! // create an iterator which parses the first part of the
+//! // radiotap header, enough to get a length
+//! let iter = radiotap::Iter::new(capture).unwrap();
+//!
+//! // now can get the rest of the capture
+//! // i.e. IEEE 802.11 header and body
+//! let rest = &capture[iter.length()..];
+//! ```
 
 pub mod bytes;
 pub mod field;
@@ -27,7 +82,7 @@ const PRESENCE_VENDOR_NAMESPACE: u32 = 30;
 /// The presence bit representing another presence word follows.
 const PRESENCE_EXT: u32 = 31;
 
-/// All errors that can occur in this crate..
+/// All errors that can occur in this crate.
 #[derive(Debug, PartialEq, Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -161,13 +216,13 @@ impl<'a> Iter<'a> {
         })
     }
 
-    /// The version of the radiotap header.
+    /// Returns the version of the radiotap header.
     #[inline]
     pub fn version(&self) -> u8 {
         VERSION
     }
 
-    /// The length of the entire radiotap header.
+    /// Returns the length of the entire radiotap header.
     #[inline]
     pub fn length(&self) -> usize {
         self.length
@@ -237,8 +292,9 @@ impl<'a> Iter<'a> {
     }
 }
 
-pub fn parse(bytes: &[u8]) -> Result<Radiotap> {
-    let mut iter = Iter::new(bytes)?;
+/// Parse a radiotap header from the given capture.
+pub fn parse(capture: &[u8]) -> Result<Radiotap> {
+    let mut iter = Iter::new(capture)?;
     let mut radiotap = Radiotap {
         length: iter.length,
         tsft: None,
@@ -306,7 +362,14 @@ pub fn parse(bytes: &[u8]) -> Result<Radiotap> {
 }
 
 impl Radiotap {
+    /// Returns the version of the radiotap header.
+    #[inline]
+    pub fn version(&self) -> u8 {
+        VERSION
+    }
+
     /// Returns the length of the entire radiotap header.
+    #[inline]
     pub fn length(&self) -> usize {
         self.length
     }
@@ -351,7 +414,7 @@ mod tests {
         .unwrap();
 
         let radiotap = parse(&capture).unwrap();
-        assert_eq!(radiotap.len(), 56);
+        assert_eq!(radiotap.length(), 56);
         assert_eq!(radiotap.tsft.unwrap().into_inner(), 77325725);
         assert_eq!(
             radiotap.flags.unwrap(),

@@ -1,4 +1,4 @@
-//! Radiotap field definitions.
+//! Field definitions.
 //!
 //! Each field helps to describe a sent or received IEEE 802.11 frame.
 
@@ -354,10 +354,3 @@ impl Fhss {
         self.hop_pattern
     }
 }
-
-/////////////////////////////////////////////////////////////////////////
-// Unit tests
-/////////////////////////////////////////////////////////////////////////
-
-#[cfg(test)]
-mod tests {}
