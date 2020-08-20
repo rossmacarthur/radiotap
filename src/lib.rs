@@ -5,27 +5,24 @@
 //! ### Parsing all fields
 //!
 //! The easiest way to use this crate is to parse a slice of bytes into a
-//! [`Radiotap`](struct.Radiotap.html) struct.
+//! [`Header`](struct.Header.html) struct.
 //!
 //! ```
 //! // a capture off the wire
 //! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
 //! # ];
-//!
-//! // parse the radiotap header from the capture into a `Radiotap` struct
+//! // parse the radiotap header from the capture into a `Header` struct
 //! let header = radiotap::parse(capture).unwrap();
 //!
 //! // get the length of the entire header
 //! let length = header.length();
 //!
 //! // unpack the desired parsed fields
-//! let radiotap::Radiotap { tsft, rate, .. } = header;
-//!
+//! let radiotap::Header { tsft, rate, .. } = header;
 //! if let Some(tsft) = tsft {
 //!     assert_eq!(tsft.into_inner(), 0x12345678);
 //! }
 //! # else { panic!("expected TSFT field") }
-//!
 //! if let Some(rate) = rate {
 //!     assert_eq!(rate.to_mbps(), 24.0);
 //! }
@@ -45,11 +42,9 @@
 //! // a capture off the wire
 //! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
 //! # ];
-//!
 //! // create an iterator which parses the first part of the
 //! // radiotap header, enough to get a length
 //! let iter = radiotap::Iter::new(capture).unwrap();
-//!
 //! // now can get the rest of the capture
 //! // i.e. IEEE 802.11 header and body
 //! let rest = &capture[iter.length()..];
@@ -64,8 +59,8 @@ use std::result;
 
 use thiserror::Error;
 
-use crate::bytes::{Bytes, FromBytes};
 use crate::field::{Kind, Type, VendorNamespace};
+use crate::prelude::*;
 
 /// A result type to use throughout this crate.
 pub type Result<T> = result::Result<T, Error>;
@@ -114,6 +109,45 @@ pub struct Field {
 }
 
 /// An iterator over a radiotap capture.
+///
+/// This type doesn't actually implement `Iterator` because it is fallible and
+/// each yielded field requires that it is either explicitly read or skipped. If
+/// you do not care about any vendor namespaces then you will want to use the
+/// [`into_default`](struct.Iter.html#method.into_default) method to produce a
+/// new 'filtered' iterator that skips over the vendor namespaces.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> radiotap::Result<()> {
+/// let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
+/// # ];
+/// let mut iter = radiotap::Iter::new(capture)?;
+///
+/// while let Some(field) = iter.next()? {
+///     match field.namespace() {
+///         radiotap::Namespace::Default => {
+///             let kind = match radiotap::field::Type::from_bit(field.bit()) {
+///                 Some(kind) => kind,
+///                 None => break,
+///             };
+///
+///             match kind {
+///                 radiotap::field::Type::Rate => {
+///                     let rate: u8 = iter.read(kind)?;
+///                     println!("Rate is {:.1} Mbps!", f32::from(rate) / 2.0);
+///                 }
+///                 kind => {
+///                     iter.skip(kind)?;
+///                 }
+///             }
+///         }
+///         radiotap::Namespace::Vendor(vns) => iter.skip_vns(vns)?,
+///     }
+/// }
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct Iter<'a> {
     /// The raw bytes in this capture.
@@ -128,10 +162,44 @@ pub struct Iter<'a> {
     namespace: Namespace,
 }
 
+/// An iterator over a radiotap capture skipping any vendor namespaces.
+///
+/// This struct is created by the
+/// [`into_default`](struct.Iter.html#method.into_default) method on
+/// [`Iter`](struct.Iter.html).
+///
+/// This type doesn't actually implement Iterator because it is fallible and
+/// each yielded field requires that it is either explicitly read or skipped.
+///
+/// # Examples
+///
+/// ```
+/// # fn main() -> radiotap::Result<()> {
+/// let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
+/// # ];
+/// let mut iter = radiotap::Iter::new(capture)?.into_default();
+///
+/// while let Some(kind) = iter.next()? {
+///     match kind {
+///         radiotap::field::Type::Rate => {
+///             let rate: u8 = iter.read(kind)?;
+///             println!("Rate is {:.1} Mbps!", f32::from(rate) / 2.0);
+///         }
+///         kind => iter.skip(kind)?,
+///     }
+/// }
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone)]
+pub struct IterDefault<'a> {
+    inner: Iter<'a>,
+}
+
 /// A parsed radiotap capture.
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
-pub struct Radiotap {
+pub struct Header {
     length: usize,
     pub tsft: Option<field::Tsft>,
     pub flags: Option<field::Flags>,
@@ -217,19 +285,34 @@ impl<'a> Iter<'a> {
     }
 
     /// Returns the version of the radiotap header.
-    #[inline]
     pub fn version(&self) -> u8 {
         VERSION
     }
 
-    /// Returns the length of the entire radiotap header.
-    #[inline]
+    /// Returns the entire length of the radiotap header.
     pub fn length(&self) -> usize {
         self.length
     }
 
+    /// Produce a new iterator that filters out any vendor namespaces and yields
+    /// a [`Type`](field/enum.Type.html) instead.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // a capture off the wire
+    /// let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
+    /// # ];
+    ///
+    /// let iter = radiotap::Iter::new(capture).unwrap().into_default();
+    /// ```
+    pub fn into_default(self) -> IterDefault<'a> {
+        IterDefault { inner: self }
+    }
+
     /// Returns the next field in the iterator.
-    pub fn next_field(&mut self) -> Result<Option<Field>> {
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> Result<Option<Field>> {
         loop {
             match self.presence.get((self.position / 32) as usize) {
                 Some(presence) => {
@@ -251,6 +334,10 @@ impl<'a> Iter<'a> {
                             // switching to vendor namespace
                             self.bytes.align(2)?;
                             self.namespace = Namespace::Vendor(self.bytes.read()?);
+                            continue;
+                        }
+                        PRESENCE_EXT => {
+                            // same namespace, next word
                             continue;
                         }
                         bit => {
@@ -286,17 +373,63 @@ impl<'a> Iter<'a> {
         Ok(field)
     }
 
-    #[inline]
     fn read_some<T: Kind, U: FromBytes>(&mut self, kind: T) -> Result<Option<U>> {
         self.read(kind).map(Some)
     }
 }
 
+impl IterDefault<'_> {
+    /// Returns the version of the radiotap header.
+    pub fn version(&self) -> u8 {
+        self.inner.version()
+    }
+
+    /// Returns the entire length of the radiotap header.
+    pub fn length(&self) -> usize {
+        self.inner.length()
+    }
+
+    /// Returns the next field type in the iterator.
+    #[allow(clippy::should_implement_trait)]
+    pub fn next(&mut self) -> Result<Option<Type>> {
+        match self.inner.next()? {
+            Some(Field {
+                namespace: Namespace::Default,
+                bit,
+            }) => Ok(Type::from_bit(bit)),
+
+            Some(Field {
+                namespace: Namespace::Vendor(vns),
+                ..
+            }) => {
+                self.inner.skip_vns(&vns)?;
+                self.next()
+            }
+
+            None => Ok(None),
+        }
+    }
+
+    /// Skip the given kind of field.
+    pub fn skip(&mut self, kind: Type) -> Result<()> {
+        self.inner.skip(kind)
+    }
+
+    /// Reads the given kind of field.
+    pub fn read<U: FromBytes>(&mut self, kind: Type) -> Result<U> {
+        self.inner.read(kind)
+    }
+
+    fn read_some<U: FromBytes>(&mut self, kind: Type) -> Result<Option<U>> {
+        self.inner.read_some(kind)
+    }
+}
+
 /// Parse a radiotap header from the given capture.
-pub fn parse(capture: &[u8]) -> Result<Radiotap> {
-    let mut iter = Iter::new(capture)?;
-    let mut radiotap = Radiotap {
-        length: iter.length,
+pub fn parse(capture: &[u8]) -> Result<Header> {
+    let mut iter = Iter::new(capture)?.into_default();
+    let mut radiotap = Header {
+        length: iter.length(),
         tsft: None,
         flags: None,
         rate: None,
@@ -319,49 +452,36 @@ pub fn parse(capture: &[u8]) -> Result<Radiotap> {
         vht: None,
         timestamp: None,
     };
-    while let Some(field) = iter.next_field()? {
-        match field.namespace() {
-            Namespace::Default => {
-                let kind = match Type::from_bit(field.bit()) {
-                    // we cannot continue here because we don't
-                    // know how to advance the iterator
-                    None => break,
-                    Some(kind) => kind,
-                };
-                match kind {
-                    Type::Tsft => radiotap.tsft = iter.read_some(kind)?,
-                    Type::Flags => radiotap.flags = iter.read_some(kind)?,
-                    Type::Rate => radiotap.rate = iter.read_some(kind)?,
-                    Type::Channel => radiotap.channel = iter.read_some(kind)?,
-                    Type::Fhss => radiotap.fhss = iter.read_some(kind)?,
-                    Type::AntennaSignal => radiotap.antenna_signal = iter.read_some(kind)?,
-                    Type::AntennaNoise => radiotap.antenna_noise = iter.read_some(kind)?,
-                    Type::LockQuality => radiotap.lock_quality = iter.read_some(kind)?,
-                    Type::TxAttenuation => radiotap.tx_attenuation = iter.read_some(kind)?,
-                    Type::TxAttenuationDb => radiotap.tx_attenuation_db = iter.read_some(kind)?,
-                    Type::TxPower => radiotap.tx_power = iter.read_some(kind)?,
-                    Type::Antenna => radiotap.antenna = iter.read_some(kind)?,
-                    Type::AntennaSignalDb => radiotap.antenna_signal_db = iter.read_some(kind)?,
-                    Type::AntennaNoiseDb => radiotap.antenna_noise_db = iter.read_some(kind)?,
-                    Type::RxFlags => radiotap.rx_flags = iter.read_some(kind)?,
-                    Type::TxFlags => radiotap.tx_flags = iter.read_some(kind)?,
-                    Type::XChannel => radiotap.xchannel = iter.read_some(kind)?,
-                    Type::Mcs => radiotap.mcs = iter.read_some(kind)?,
-                    Type::AmpduStatus => radiotap.ampdu_status = iter.read_some(kind)?,
-                    Type::Vht => radiotap.vht = iter.read_some(kind)?,
-                    Type::Timestamp => radiotap.timestamp = iter.read_some(kind)?,
-                    kind => iter.skip(kind)?,
-                }
-            }
-            Namespace::Vendor(vns) => {
-                iter.skip_vns(&vns)?;
-            }
+    while let Some(kind) = iter.next()? {
+        match kind {
+            Type::Tsft => radiotap.tsft = iter.read_some(kind)?,
+            Type::Flags => radiotap.flags = iter.read_some(kind)?,
+            Type::Rate => radiotap.rate = iter.read_some(kind)?,
+            Type::Channel => radiotap.channel = iter.read_some(kind)?,
+            Type::Fhss => radiotap.fhss = iter.read_some(kind)?,
+            Type::AntennaSignal => radiotap.antenna_signal = iter.read_some(kind)?,
+            Type::AntennaNoise => radiotap.antenna_noise = iter.read_some(kind)?,
+            Type::LockQuality => radiotap.lock_quality = iter.read_some(kind)?,
+            Type::TxAttenuation => radiotap.tx_attenuation = iter.read_some(kind)?,
+            Type::TxAttenuationDb => radiotap.tx_attenuation_db = iter.read_some(kind)?,
+            Type::TxPower => radiotap.tx_power = iter.read_some(kind)?,
+            Type::Antenna => radiotap.antenna = iter.read_some(kind)?,
+            Type::AntennaSignalDb => radiotap.antenna_signal_db = iter.read_some(kind)?,
+            Type::AntennaNoiseDb => radiotap.antenna_noise_db = iter.read_some(kind)?,
+            Type::RxFlags => radiotap.rx_flags = iter.read_some(kind)?,
+            Type::TxFlags => radiotap.tx_flags = iter.read_some(kind)?,
+            Type::XChannel => radiotap.xchannel = iter.read_some(kind)?,
+            Type::Mcs => radiotap.mcs = iter.read_some(kind)?,
+            Type::AmpduStatus => radiotap.ampdu_status = iter.read_some(kind)?,
+            Type::Vht => radiotap.vht = iter.read_some(kind)?,
+            Type::Timestamp => radiotap.timestamp = iter.read_some(kind)?,
+            kind => iter.skip(kind)?,
         }
     }
     Ok(radiotap)
 }
 
-impl Radiotap {
+impl Header {
     /// Returns the version of the radiotap header.
     #[inline]
     pub fn version(&self) -> u8 {

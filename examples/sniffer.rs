@@ -1,5 +1,5 @@
 //! This example opens a packet capture on the given interface, and prints out
-//! the Radiotap capture for the first 100 captured packets.
+//! the radiotap capture for the first 100 captured packets.
 //!
 //! On some macOS systems you might need to first put the Wi-Fi interface into
 
@@ -20,7 +20,7 @@ fn main() {
         .to_string()
     };
 
-    // Open packet capture and set data link to 802.11 Radiotap
+    // Open packet capture and set data link to 802.11 radiotap
     let mut cap = pcap::Capture::from_device(&device[..])
         .unwrap()
         .timeout(1)
@@ -31,7 +31,7 @@ fn main() {
         .unwrap();
 
     let mut count = 0;
-    // Print out the first 100 Radiotap headers of packets
+    // Print out the first 100 radiotap headers of packets
     while count < 100 {
         // Get a packet from the interface
         match cap.next() {

@@ -30,7 +30,7 @@ pub trait Kind {
 impl_kind! {
     /// The type of radiotap field.
     ///
-    /// Each variant corresponds to unique field in the Radiotap capture.
+    /// Each variant corresponds to unique field in the radiotap capture.
     /// [`Kind`](trait.Kind.html) is implemented to describe the alignment
     /// and size of each field, so that the iterator knows how to handle it.
     ///
