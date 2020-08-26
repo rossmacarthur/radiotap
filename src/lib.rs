@@ -8,7 +8,7 @@
 //! [`Header`](struct.Header.html) struct.
 //!
 //! ```
-//! // a capture off the wire
+//! // a capture off the wire or from a pcap file
 //! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
 //! # ];
 //! // parse the radiotap header from the capture into a `Header` struct
@@ -39,31 +39,31 @@
 //! any of the fields.
 //!
 //! ```
-//! // a capture off the wire
+//! // a capture off the wire or from a pcap file
 //! let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, // ...
 //! # ];
+//!
 //! // create an iterator which parses the first part of the
 //! // radiotap header, enough to get a length
 //! let iter = radiotap::Iter::new(capture).unwrap();
-//! // now can get the rest of the capture
+//!
+//! // now we can get the rest of the capture
 //! // i.e. IEEE 802.11 header and body
 //! let rest = &capture[iter.length()..];
 //! ```
 
 pub mod bytes;
+mod error;
 pub mod field;
 mod prelude;
 mod util;
 
-use std::result;
+use std::error::Error as StdError;
 
-use thiserror::Error;
-
+use crate::error::ResultExt;
+pub use crate::error::{Error, ErrorKind, Result};
 use crate::field::{Kind, Type, VendorNamespace};
 use crate::prelude::*;
-
-/// A result type to use throughout this crate.
-pub type Result<T> = result::Result<T, Error>;
 
 /// The radiotap header version.
 const VERSION: u8 = 0;
@@ -76,19 +76,6 @@ const PRESENCE_VENDOR_NAMESPACE: u32 = 30;
 
 /// The presence bit representing another presence word follows.
 const PRESENCE_EXT: u32 = 31;
-
-/// All errors that can occur in this crate.
-#[derive(Debug, PartialEq, Error)]
-#[non_exhaustive]
-pub enum Error {
-    /// Unsupported radiotap version.
-    #[error("unsupported radiotap version `{version}`")]
-    UnsupportedVersion { version: u8 },
-
-    /// The given data is shorter than the amount required.
-    #[error("the given data of length `{actual}` is shorter than the required `{required}`")]
-    InvalidLength { required: usize, actual: usize },
-}
 
 /// A radiotap namespace.
 #[derive(Debug, Clone)]
@@ -248,27 +235,21 @@ impl<'a> Iter<'a> {
         let mut bytes = Bytes::new(bytes);
 
         // the radiotap version, only 0 is supported
-        let version = bytes.read()?;
+        let version = bytes.read().context(ErrorKind::Header)?;
         if version != VERSION {
-            return Err(Error::UnsupportedVersion { version });
+            return Err(Error::new(ErrorKind::UnsupportedVersion(version)));
         }
 
         // padding byte
-        bytes.advance(1)?;
+        bytes.advance(1).context(ErrorKind::Header)?;
 
         // the total length of the entire capture
-        let length = bytes.read::<u16>()?.into();
-        if bytes.len() < length {
-            return Err(Error::InvalidLength {
-                required: length,
-                actual: bytes.len(),
-            });
-        }
+        let length = bytes.read::<u16>().context(ErrorKind::Header)?.into();
 
         // the presence words
         let mut presence = Vec::new();
         loop {
-            let word = bytes.read()?;
+            let word = bytes.read().context(ErrorKind::Header)?;
             presence.push(word);
             if word & (1 << PRESENCE_EXT) == 0 {
                 break;
@@ -332,8 +313,11 @@ impl<'a> Iter<'a> {
                         }
                         PRESENCE_VENDOR_NAMESPACE => {
                             // switching to vendor namespace
-                            self.bytes.align(2)?;
-                            self.namespace = Namespace::Vendor(self.bytes.read()?);
+                            let context =
+                                || ErrorKind::Read(std::any::type_name::<VendorNamespace>());
+                            self.bytes.align(2).with_context(context)?;
+                            self.namespace =
+                                Namespace::Vendor(self.bytes.read().with_context(context)?);
                             continue;
                         }
                         PRESENCE_EXT => {
@@ -355,25 +339,42 @@ impl<'a> Iter<'a> {
 
     /// Skip the given kind of field.
     pub fn skip<T: Kind>(&mut self, kind: T) -> Result<()> {
-        self.bytes.align(kind.align())?;
-        self.bytes.advance(kind.size())?;
+        self.bytes.align(kind.align()).context(ErrorKind::Skip)?;
+        self.bytes.advance(kind.size()).context(ErrorKind::Skip)?;
         Ok(())
     }
 
     /// Skip the given vendor namespace.
     pub fn skip_vns(&mut self, vns: &VendorNamespace) -> Result<()> {
-        self.bytes.advance(vns.skip_length())
+        self.bytes
+            .advance(vns.skip_length())
+            .context(ErrorKind::Skip)
     }
 
     /// Reads the given kind of field.
-    pub fn read<T: Kind, U: FromBytes>(&mut self, kind: T) -> Result<U> {
-        self.bytes.align(kind.align())?;
-        let field = U::from_bytes(&mut self.bytes.bytes(kind.size())?)?;
-        self.bytes.advance(kind.size())?;
+    pub fn read<T, U, E>(&mut self, kind: T) -> Result<U>
+    where
+        T: Kind,
+        U: FromBytes<Error = E>,
+        E: Into<Box<dyn StdError + Send + Sync>>,
+    {
+        let context = || ErrorKind::Read(std::any::type_name::<U>());
+        self.bytes.align(kind.align()).with_context(context)?;
+        let start_pos = self.bytes.pos();
+        let field = U::from_bytes(&mut self.bytes).with_context(context)?;
+        let end_pos = self.bytes.pos();
+        if end_pos - start_pos != kind.size() {
+            return Err(Error::new(context()));
+        }
         Ok(field)
     }
 
-    fn read_some<T: Kind, U: FromBytes>(&mut self, kind: T) -> Result<Option<U>> {
+    fn read_some<T, U, E>(&mut self, kind: T) -> Result<Option<U>>
+    where
+        T: Kind,
+        U: FromBytes<Error = E>,
+        E: Into<Box<dyn StdError + Send + Sync>>,
+    {
         self.read(kind).map(Some)
     }
 }
@@ -416,11 +417,19 @@ impl IterDefault<'_> {
     }
 
     /// Reads the given kind of field.
-    pub fn read<U: FromBytes>(&mut self, kind: Type) -> Result<U> {
+    pub fn read<U, E>(&mut self, kind: Type) -> Result<U>
+    where
+        U: FromBytes<Error = E>,
+        E: Into<Box<dyn StdError + Send + Sync>>,
+    {
         self.inner.read(kind)
     }
 
-    fn read_some<U: FromBytes>(&mut self, kind: Type) -> Result<Option<U>> {
+    fn read_some<U, E>(&mut self, kind: Type) -> Result<Option<U>>
+    where
+        U: FromBytes<Error = E>,
+        E: Into<Box<dyn StdError + Send + Sync>>,
+    {
         self.inner.read_some(kind)
     }
 }

@@ -1,5 +1,6 @@
 //! Defines the Timestamp field.
 
+use std::result;
 use std::time::Duration;
 use std::time::SystemTime;
 
@@ -66,7 +67,9 @@ pub struct Timestamp {
 }
 
 impl FromBytes for Timestamp {
-    fn from_bytes(bytes: &mut Bytes) -> crate::Result<Self> {
+    type Error = Error;
+
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let ts = bytes.read()?;
         let accuracy = bytes.read()?;
         let unit_position = bytes.read()?;
@@ -103,30 +106,32 @@ impl Timestamp {
     }
 
     /// Returns the time unit of the timestamp.
-    pub fn unit(&self) -> Result<Unit, ParseUnitError> {
+    pub fn unit(&self) -> result::Result<Unit, ParseUnitError> {
         let bits = self.unit_position & 0x0f;
         Unit::from_bits(bits).ok_or_else(|| ParseUnitError(bits))
     }
 
     /// Returns the timestamp as a duration since the UNIX Epoch.
-    pub fn duration(&self) -> Result<Duration, ParseUnitError> {
+    pub fn duration(&self) -> result::Result<Duration, ParseUnitError> {
         self.unit().map(|unit| unit.duration(self.ts))
     }
 
     /// Returns the timestamp as a system time.
-    pub fn system_time(&self) -> Result<SystemTime, ParseUnitError> {
+    pub fn system_time(&self) -> result::Result<SystemTime, ParseUnitError> {
         self.duration().map(|d| SystemTime::UNIX_EPOCH + d)
     }
 
     /// Returns the accuracy of the timestamp as a duration.
-    pub fn accuracy(&self) -> Option<Result<Duration, ParseUnitError>> {
+    pub fn accuracy(&self) -> Option<result::Result<Duration, ParseUnitError>> {
         self.flags
             .contains(Flags::ACCURACY)
             .some(|| self.unit().map(|unit| unit.duration(self.accuracy.into())))
     }
 
     /// Returns the sampling position of the timstamp.
-    pub fn sampling_position(&self) -> Result<SamplingPosition, ParseSamplingPositionError> {
+    pub fn sampling_position(
+        &self,
+    ) -> result::Result<SamplingPosition, ParseSamplingPositionError> {
         let bits = self.unit_position >> 4;
         SamplingPosition::from_bits(bits).ok_or_else(|| ParseSamplingPositionError(bits))
     }

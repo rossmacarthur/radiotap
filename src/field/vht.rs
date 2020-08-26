@@ -1,6 +1,6 @@
 //! Defines the VHT field.
 
-use std::result::Result;
+use std::result;
 
 use thiserror::Error;
 
@@ -136,7 +136,9 @@ impl User {
 }
 
 impl FromBytes for Vht {
-    fn from_bytes(bytes: &mut Bytes) -> crate::Result<Self> {
+    type Error = Error;
+
+    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let known = bytes.read()?;
         let flags = bytes.read()?;
         let bandwidth = bytes.read()?;
@@ -179,7 +181,7 @@ impl Vht {
     }
 
     /// Returns the bandwidth.
-    pub fn bandwidth(&self) -> Option<Result<Bandwidth, ParseBandwidthError>> {
+    pub fn bandwidth(&self) -> Option<result::Result<Bandwidth, ParseBandwidthError>> {
         self.known.contains(Known::BW).some(|| {
             let bits = self.bandwidth & 0x1f;
             Bandwidth::from_bits(bits).ok_or_else(|| ParseBandwidthError(bits))

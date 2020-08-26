@@ -1,8 +1,20 @@
 //! Defines a cursor over a slice of bytes.
 
 use std::mem;
+use std::result;
 
-use crate::{Error, Result};
+use thiserror::Error;
+
+pub(crate) type Result<T> = result::Result<T, Error>;
+
+/// A generic error that can occur while reading bytes.
+#[derive(Debug, Error, PartialEq)]
+#[error("wanted {size} bytes but {} bytes remain", self.len - self.pos)]
+pub struct Error {
+    size: usize,
+    len: usize,
+    pos: usize,
+}
 
 /// A cursor over a slice of bytes.
 #[derive(Debug, Clone)]
@@ -22,33 +34,40 @@ pub struct Bytes<'a> {
 /// # Examples
 ///
 /// In the following example we parse a copy of the built-in
-/// [`Rate`](field/struct.Rate.html) field.
+/// [`Rate`](../field/struct.Rate.html) field.
 ///
 /// ```rust
-/// use radiotap::Result;
-/// use radiotap::bytes::{Bytes, FromBytes};
+/// use radiotap::bytes::{Bytes, Error, FromBytes};
 ///
 /// struct MyRate {
-///     value: u8
+///     value: u8,
 /// }
 ///
 /// impl FromBytes for MyRate {
-///     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+///     type Error = Error;
+///
+///     fn from_bytes(bytes: &mut Bytes) -> Result<Self, Self::Error> {
 ///         let value = bytes.read()?;
 ///         Ok(Self { value })
 ///     }
 /// }
 /// ```
 pub trait FromBytes: Sized {
+    /// The associated error which can be returned from parsing.
+    ///
+    /// All primitive types as well as radiotap fields implementing this trait
+    /// set this error to [`Error`](struct.Error.html).
+    type Error;
+
     /// Construct a type from bytes.
     ///
     /// This method is often used implicitly through
     /// [`Bytes`](struct.Bytes.html)'s [`read`](struct.Bytes.html#read) method.
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self>;
+    fn from_bytes(bytes: &mut Bytes) -> result::Result<Self, Self::Error>;
 
     /// Construct a type from a hex string of bytes.
     #[cfg(test)]
-    fn from_hex(s: &str) -> Result<Self> {
+    fn from_hex(s: &str) -> result::Result<Self, Self::Error> {
         let b = hex::decode(s).unwrap();
         let mut bytes = Bytes::new(&b);
         Self::from_bytes(&mut bytes)
@@ -64,21 +83,24 @@ impl<'a> Bytes<'a> {
         }
     }
 
+    /// Returns the current position of the cursor.
+    pub(crate) fn pos(&self) -> usize {
+        self.pos
+    }
+
     /// Returns the total length of the original underlying buffer.
     pub(crate) fn len(&self) -> usize {
         self.inner.len()
     }
 
-    /// Returns the remaining length of the underlying buffer.
-    fn remaining(&self) -> usize {
-        self.len().saturating_sub(self.pos)
-    }
-
     fn checked_pos(&self, new_pos: usize) -> Result<usize> {
+        let pos = self.pos;
+        let len = self.len();
         if new_pos > self.len() {
-            Err(Error::InvalidLength {
-                required: new_pos - self.pos,
-                actual: self.remaining(),
+            Err(Error {
+                size: new_pos - pos,
+                len,
+                pos,
             })
         } else {
             Ok(new_pos)
@@ -106,19 +128,6 @@ impl<'a> Bytes<'a> {
         self.set_pos(self.pos + size)
     }
 
-    /// Gets a slice of the given size and doesn't advance the underlying
-    /// buffer.
-    pub(crate) fn slice(&self, size: usize) -> Result<&'a [u8]> {
-        let end = self.checked_pos(self.pos + size)?;
-        Ok(&self.inner[self.pos..end])
-    }
-
-    /// Gets a new bytes of the given size and doesn't advance the underlying
-    /// buffer of this bytes.
-    pub(crate) fn bytes(&self, size: usize) -> Result<Self> {
-        Ok(Self::new(self.slice(size)?))
-    }
-
     pub(crate) fn read_slice(&mut self, size: usize) -> Result<&'a [u8]> {
         let start = self.pos;
         self.pos = self.checked_pos(start + size)?;
@@ -127,11 +136,7 @@ impl<'a> Bytes<'a> {
 
     /// Allows types implementing [`FromBytes`](trait.FromBytes.html) to be
     /// easily read from these bytes.
-    ///
-    /// # Errors
-    ///
-    /// If there is not enough bytes remaining to read the type.
-    pub fn read<T: FromBytes>(&mut self) -> Result<T> {
+    pub fn read<T: FromBytes>(&mut self) -> result::Result<T, <T as FromBytes>::Error> {
         T::from_bytes(self)
     }
 }
@@ -139,6 +144,8 @@ impl<'a> Bytes<'a> {
 macro_rules! impl_primitive {
     ($ty:ty) => {
         impl FromBytes for $ty {
+            type Error = Error;
+
             fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
                 const COUNT: usize = mem::size_of::<$ty>();
                 let mut buf = [0; COUNT];
@@ -163,8 +170,13 @@ impl_primitive!(i128);
 
 macro_rules! impl_array {
     ($size:expr) => {
-        impl<T: FromBytes + Default> FromBytes for [T; $size] {
-            fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
+        impl<T, E> FromBytes for [T; $size]
+        where
+            T: FromBytes<Error = E> + Default,
+        {
+            type Error = E;
+
+            fn from_bytes(bytes: &mut Bytes) -> result::Result<Self, E> {
                 let mut buf = Self::default();
                 for i in 0..$size {
                     buf[i] = bytes.read()?;
@@ -235,6 +247,8 @@ mod tests {
         struct NewType(i16);
 
         impl FromBytes for NewType {
+            type Error = Error;
+
             fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
                 bytes.read().map(Self)
             }

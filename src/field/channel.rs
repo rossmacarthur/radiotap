@@ -1,7 +1,6 @@
 //! Defines the Channel field.
 
 use crate::prelude::*;
-use crate::Result;
 
 impl_bitflags! {
     /// Flags describing the channel.
@@ -41,6 +40,8 @@ pub struct Channel {
 }
 
 impl FromBytes for Channel {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let freq = bytes.read()?;
         let flags = bytes.read()?;

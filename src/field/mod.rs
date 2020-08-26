@@ -6,7 +6,6 @@
 mod _macros;
 
 use crate::prelude::*;
-use crate::Result;
 
 /// An organizationally unique identifier.
 pub type Oui = [u8; 3];
@@ -15,10 +14,11 @@ pub type Oui = [u8; 3];
 // The type of radiotap field.
 /////////////////////////////////////////////////////////////////////////
 
-/// Defines a kind of radiotap field.
+/// A kind of radiotap field.
 ///
-/// Vendor namespaces need to implement this in order to be able to use the
-/// iterator to parse their fields.
+/// [`Type`](enum.Type.html) implements this to describe the alignment and size
+/// for the default radiotap fields. Vendor namespaces need to implement this in
+/// order to be able to use the iterator to parse their fields.
 pub trait Kind {
     /// Returns the alignment of the field.
     fn align(&self) -> usize;
@@ -35,7 +35,8 @@ impl_kind! {
     /// and size of each field, so that the iterator knows how to handle it.
     ///
     /// Not all of these types are parsed by this crate. The ones that have a
-    /// corresponding field have the identical name in this module.
+    /// corresponding field have the identical name in [`field`](index.html)
+    /// module.
     #[derive(Debug, Clone, PartialEq)]
     #[non_exhaustive]
     pub enum Type {
@@ -83,6 +84,8 @@ pub struct VendorNamespace {
 }
 
 impl FromBytes for VendorNamespace {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let oui = bytes.read()?;
         let sub_ns = bytes.read()?;
@@ -333,6 +336,8 @@ pub struct Fhss {
 }
 
 impl FromBytes for Fhss {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let hop_set = bytes.read()?;
         let hop_pattern = bytes.read()?;

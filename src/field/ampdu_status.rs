@@ -1,7 +1,6 @@
 //! Defines the A-MPDU Status field.
 
 use crate::prelude::*;
-use crate::Result;
 
 impl_bitflags! {
     /// Flags describing the A-MPDU.
@@ -37,6 +36,8 @@ pub struct AmpduStatus {
 }
 
 impl FromBytes for AmpduStatus {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let reference = bytes.read()?;
         let flags = bytes.read()?;

@@ -89,7 +89,9 @@ macro_rules! impl_newtype {
         pub struct $name(pub(crate) $ty);
 
         impl FromBytes for $name {
-            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::Result<Self> {
+            type Error = crate::bytes::Error;
+
+            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::bytes::Result<Self> {
                 bytes.read().map(Self)
             }
         }
@@ -125,7 +127,9 @@ macro_rules! impl_bitflags {
         }
 
         impl crate::bytes::FromBytes for $name {
-            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::Result<Self> {
+            type Error = crate::bytes::Error;
+
+            fn from_bytes(bytes: &mut crate::bytes::Bytes) -> crate::bytes::Result<Self> {
                 bytes.read().map(Self::from_bits_truncate)
             }
         }

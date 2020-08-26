@@ -16,5 +16,6 @@ bitflags = "1"
 thiserror = "1"
 
 [dev-dependencies]
+anyhow = "1.0.32"
 hex = "0.4.2"
 pcap = "0.7.0"

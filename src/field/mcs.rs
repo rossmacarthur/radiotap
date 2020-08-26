@@ -2,7 +2,6 @@
 
 use crate::field::{Fec, GuardInterval};
 use crate::prelude::*;
-use crate::Result;
 
 impl_enum! {
     /// The bandwidth.
@@ -100,6 +99,8 @@ impl From<bool> for Format {
 }
 
 impl FromBytes for Mcs {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let known = bytes.read()?;
         let flags = bytes.read()?;

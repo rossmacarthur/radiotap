@@ -1,7 +1,6 @@
 //! Defines the XChannel field.
 
 use crate::prelude::*;
-use crate::Result;
 
 impl_bitflags! {
     /// Extended flags describing the channel.
@@ -48,6 +47,8 @@ pub struct XChannel {
 }
 
 impl FromBytes for XChannel {
+    type Error = Error;
+
     fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
         let flags = bytes.read()?;
         let freq = bytes.read()?;
