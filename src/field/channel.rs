@@ -51,12 +51,12 @@ impl FromBytes for Channel {
 
 impl Channel {
     /// Returns the channel frequency in MHz.
-    pub fn freq(&self) -> u16 {
+    pub const fn freq(&self) -> u16 {
         self.freq
     }
 
     /// Returns flags describing the channel.
-    pub fn flags(&self) -> Flags {
+    pub const fn flags(&self) -> Flags {
         self.flags
     }
 }

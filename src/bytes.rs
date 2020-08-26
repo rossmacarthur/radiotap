@@ -76,7 +76,7 @@ pub trait FromBytes: Sized {
 
 impl<'a> Bytes<'a> {
     /// Returns a new cursor over a slice of bytes.
-    pub(crate) fn new(bytes: &'a [u8]) -> Self {
+    pub(crate) const fn new(bytes: &'a [u8]) -> Self {
         Self {
             inner: bytes,
             pos: 0,
@@ -84,12 +84,12 @@ impl<'a> Bytes<'a> {
     }
 
     /// Returns the current position of the cursor.
-    pub(crate) fn pos(&self) -> usize {
+    pub(crate) const fn pos(&self) -> usize {
         self.pos
     }
 
     /// Returns the total length of the original underlying buffer.
-    pub(crate) fn len(&self) -> usize {
+    pub(crate) const fn len(&self) -> usize {
         self.inner.len()
     }
 

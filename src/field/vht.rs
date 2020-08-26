@@ -115,22 +115,22 @@ pub struct Vht {
 
 impl User {
     /// Returns the VHT index (1 - 9).
-    pub fn index(&self) -> u8 {
+    pub const fn index(&self) -> u8 {
         self.index
     }
 
     /// Returns the number of spatial streams (1 - 8).
-    pub fn nss(&self) -> u8 {
+    pub const fn nss(&self) -> u8 {
         self.nss
     }
 
     /// Returns the number of space-time streams.
-    pub fn nsts(&self) -> u8 {
+    pub const fn nsts(&self) -> u8 {
         self.nsts
     }
 
     /// Returns the FEC type.
-    pub fn fec(&self) -> Fec {
+    pub const fn fec(&self) -> Fec {
         self.fec
     }
 }
@@ -230,12 +230,12 @@ impl Vht {
     }
 
     /// Returns the raw known information.
-    pub fn known(&self) -> Known {
+    pub const fn known(&self) -> Known {
         self.known
     }
 
     /// Returns the raw flags.
-    pub fn flags(&self) -> Flags {
+    pub const fn flags(&self) -> Flags {
         self.flags
     }
 }

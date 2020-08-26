@@ -94,14 +94,9 @@ impl Unit {
 }
 
 impl Timestamp {
-    /// Returns the flags describing the timestamp.
-    pub fn flags(&self) -> Flags {
-        self.flags
-    }
-
     /// Returns the raw timestamp value, in
     /// [`.unit()`](struct.Timestamp.html#method.unit) units.
-    pub fn ts(&self) -> u64 {
+    pub const fn ts(&self) -> u64 {
         self.ts
     }
 
@@ -134,5 +129,10 @@ impl Timestamp {
     ) -> result::Result<SamplingPosition, ParseSamplingPositionError> {
         let bits = self.unit_position >> 4;
         SamplingPosition::from_bits(bits).ok_or_else(|| ParseSamplingPositionError(bits))
+    }
+
+    /// Returns the flags describing the timestamp.
+    pub const fn flags(&self) -> Flags {
+        self.flags
     }
 }

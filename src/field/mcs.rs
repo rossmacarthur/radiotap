@@ -163,12 +163,12 @@ impl Mcs {
     }
 
     /// Returns the raw known information.
-    pub fn known(&self) -> Known {
+    pub const fn known(&self) -> Known {
         self.known
     }
 
     /// Returns the raw flags.
-    pub fn flags(&self) -> Flags {
+    pub const fn flags(&self) -> Flags {
         self.flags
     }
 }

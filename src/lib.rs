@@ -213,12 +213,12 @@ pub struct Header {
 
 impl Field {
     /// Returns this field's namespace.
-    pub fn namespace(&self) -> &Namespace {
+    pub const fn namespace(&self) -> &Namespace {
         &self.namespace
     }
 
     /// Returns this field's presence bit number.
-    pub fn bit(&self) -> u32 {
+    pub const fn bit(&self) -> u32 {
         self.bit
     }
 }
@@ -266,12 +266,12 @@ impl<'a> Iter<'a> {
     }
 
     /// Returns the version of the radiotap header.
-    pub fn version(&self) -> u8 {
+    pub const fn version(&self) -> u8 {
         VERSION
     }
 
     /// Returns the entire length of the radiotap header.
-    pub fn length(&self) -> usize {
+    pub const fn length(&self) -> usize {
         self.length
     }
 
@@ -287,7 +287,7 @@ impl<'a> Iter<'a> {
     ///
     /// let iter = radiotap::Iter::new(capture).unwrap().into_default();
     /// ```
-    pub fn into_default(self) -> IterDefault<'a> {
+    pub const fn into_default(self) -> IterDefault<'a> {
         IterDefault { inner: self }
     }
 
@@ -381,12 +381,14 @@ impl<'a> Iter<'a> {
 
 impl IterDefault<'_> {
     /// Returns the version of the radiotap header.
-    pub fn version(&self) -> u8 {
+    #[inline]
+    pub const fn version(&self) -> u8 {
         self.inner.version()
     }
 
     /// Returns the entire length of the radiotap header.
-    pub fn length(&self) -> usize {
+    #[inline]
+    pub const fn length(&self) -> usize {
         self.inner.length()
     }
 
@@ -412,11 +414,13 @@ impl IterDefault<'_> {
     }
 
     /// Skip the given kind of field.
+    #[inline]
     pub fn skip(&mut self, kind: Type) -> Result<()> {
         self.inner.skip(kind)
     }
 
     /// Reads the given kind of field.
+    #[inline]
     pub fn read<U, E>(&mut self, kind: Type) -> Result<U>
     where
         U: FromBytes<Error = E>,
@@ -425,6 +429,7 @@ impl IterDefault<'_> {
         self.inner.read(kind)
     }
 
+    #[inline]
     fn read_some<U, E>(&mut self, kind: Type) -> Result<Option<U>>
     where
         U: FromBytes<Error = E>,
@@ -493,13 +498,13 @@ pub fn parse(capture: &[u8]) -> Result<Header> {
 impl Header {
     /// Returns the version of the radiotap header.
     #[inline]
-    pub fn version(&self) -> u8 {
+    pub const fn version(&self) -> u8 {
         VERSION
     }
 
     /// Returns the length of the entire radiotap header.
     #[inline]
-    pub fn length(&self) -> usize {
+    pub const fn length(&self) -> usize {
         self.length
     }
 }

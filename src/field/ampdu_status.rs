@@ -51,16 +51,6 @@ impl FromBytes for AmpduStatus {
 }
 
 impl AmpduStatus {
-    /// Returns the raw A-MPDU flags.
-    pub fn flags(&self) -> Flags {
-        self.flags
-    }
-
-    /// Returns the A-MPDU reference number.
-    pub fn reference(&self) -> u32 {
-        self.reference
-    }
-
     /// Whether the frame is 0-length subframe of this A-MPDU.
     pub fn is_zero_len(&self) -> Option<bool> {
         self.flags
@@ -87,6 +77,16 @@ impl AmpduStatus {
         self.flags
             .contains(Flags::EOF_KNOWN)
             .some(|| self.flags.contains(Flags::EOF))
+    }
+
+    /// Returns the raw A-MPDU flags.
+    pub const fn flags(&self) -> Flags {
+        self.flags
+    }
+
+    /// Returns the A-MPDU reference number.
+    pub const fn reference(&self) -> u32 {
+        self.reference
     }
 }
 
