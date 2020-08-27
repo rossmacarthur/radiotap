@@ -125,6 +125,7 @@ impl VendorNamespace {
 
 impl_enum! {
     /// The guard interval.
+    #[derive(Copy)]
     #[non_exhaustive]
     pub enum GuardInterval: u8 {
         /// 800 ns.

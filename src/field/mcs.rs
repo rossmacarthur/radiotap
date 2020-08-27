@@ -1,7 +1,57 @@
 //! Defines the MCS field.
 
+use std::result;
+
+use thiserror::Error;
+
 use crate::field::{Fec, GuardInterval};
 use crate::prelude::*;
+
+#[rustfmt::skip]
+const RATE: [[f32; 4]; 32] = [
+    //      20 MHz          40 MHz
+    //   LGI     SGI     LGI     SGI
+    [    6.5,    7.2,   13.5,   15.0  ], // MCS 0
+    [   13.0,   14.4,   27.0,   30.0  ],
+    [   19.5,   21.7,   40.5,   45.0  ],
+    [   26.0,   28.9,   54.0,   60.0  ],
+    [   39.0,   43.3,   81.0,   90.0  ],
+    [   52.0,   57.8,  108.0,  120.0  ],
+    [   58.5,   65.0,  121.5,  135.0  ],
+    [   65.0,   72.2,  135.0,  150.0  ],
+
+    [   13.0,   14.4,   27.0,   30.0  ], // MCS 8
+    [   26.0,   28.9,   54.0,   60.0  ],
+    [   39.0,   43.3,   81.0,   90.0  ],
+    [   52.0,   57.8,  108.0,  120.0  ],
+    [   78.0,   86.7,  162.0,  180.0  ],
+    [  104.0,  115.6,  216.0,  240.0  ],
+    [  117.0,  130.0,  243.0,  270.0  ],
+    [  130.0,  144.4,  270.0,  300.0  ],
+
+    [   19.5,   21.7,   40.5,   45.0  ], // MCS 16
+    [   39.0,   43.3,   81.0,   90.0  ],
+    [   58.5,   65.0,  121.5,  135.0  ],
+    [   78.0,   86.7,  162.0,  180.0  ],
+    [  117.0,  130.0,  243.0,  270.0  ],
+    [  156.0,  173.3,  324.0,  360.0  ],
+    [  175.5,  195.0,  364.5,  405.0  ],
+    [  195.0,  216.7,  405.0,  450.0  ],
+
+    [   26.0,   28.8,   54.0,   60.0  ], // MCS 24
+    [   52.0,   57.6,  108.0,  120.0  ],
+    [   78.0,   86.8,  162.0,  180.0  ],
+    [  104.0,  115.6,  216.0,  240.0  ],
+    [  156.0,  173.2,  324.0,  360.0  ],
+    [  208.0,  231.2,  432.0,  480.0  ],
+    [  234.0,  260.0,  486.0,  540.0  ],
+    [  260.0,  288.8,  540.0,  600.0  ],
+];
+
+/// An error returned when parsing the datarate.
+#[derive(Debug, Error)]
+#[error("failed to calculate datarate")]
+pub struct ParseDatarateError;
 
 impl_enum! {
     /// The bandwidth.
@@ -89,6 +139,17 @@ pub struct Mcs {
     index: u8,
 }
 
+impl Bandwidth {
+    fn to_mhz(&self) -> u32 {
+        match self {
+            Self::BW20 => 20,
+            Self::BW40 => 40,
+            Self::BW20L => 40,
+            Self::BW20U => 40,
+        }
+    }
+}
+
 impl From<bool> for Format {
     fn from(b: bool) -> Self {
         match b {
@@ -162,6 +223,21 @@ impl Mcs {
         })
     }
 
+    /// Returns the data rate in megabits per second.
+    pub fn to_mbps(&self) -> Option<result::Result<f32, ParseDatarateError>> {
+        let row: usize = self.index()?.into();
+        if row > 31 {
+            return Some(Err(ParseDatarateError));
+        }
+        let b = match self.bandwidth()?.to_mhz() {
+            20 => 0,
+            40 => 2,
+            _ => unreachable!(),
+        };
+        let col: usize = (b + self.guard_interval()?.into_inner()).into();
+        Some(Ok(RATE[row][col]))
+    }
+
     /// Returns the raw known information.
     pub const fn known(&self) -> Known {
         self.known
@@ -195,5 +271,12 @@ mod tests {
         assert_eq!(mcs.fec(), Some(Fec::Bcc));
         assert_eq!(mcs.stbc(), None);
         assert_eq!(mcs.ness(), None);
+        assert_eq!(mcs.to_mbps().unwrap().unwrap(), 72.2);
+    }
+
+    #[test]
+    fn datarate() {
+        let mcs = Mcs::from_hex("1f140f").unwrap();
+        assert_eq!(mcs.to_mbps().unwrap().unwrap(), 144.4);
     }
 }

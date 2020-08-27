@@ -65,14 +65,23 @@ macro_rules! impl_enum {
             )+
         }
 
+        #[allow(dead_code)]
         impl $name {
-            #[allow(dead_code)]
             pub(crate) fn from_bits(bits: $ty) -> Option<Self> {
                 match bits {
                     $(
                         $value => Some(Self::$variant),
                     )+
                     _ => None
+                }
+            }
+
+            /// Consumes this field and returns the underlying value.
+            pub(crate) fn into_inner(self) -> $ty {
+                match self {
+                    $(
+                        Self::$variant => $value,
+                    )+
                 }
             }
         }
