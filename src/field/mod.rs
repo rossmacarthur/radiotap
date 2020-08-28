@@ -125,7 +125,6 @@ impl VendorNamespace {
 
 impl_enum! {
     /// The guard interval.
-    #[derive(Copy)]
     #[non_exhaustive]
     pub enum GuardInterval: u8 {
         /// 800 ns.
@@ -145,7 +144,6 @@ impl From<bool> for GuardInterval {
 }
 
 impl_enum! {
-    #[derive(Copy)]
     /// Forward error correction type.
     pub enum Fec: u8 {
         /// Binary convolutional coding.
