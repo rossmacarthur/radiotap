@@ -33,7 +33,7 @@ impl_bitflags! {
 }
 
 /// Channel information.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Channel {
     freq: u16,
     flags: Flags,

@@ -39,7 +39,7 @@ impl_bitflags! {
 }
 
 /// Extended channel information.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct XChannel {
     flags: Flags,
     freq: u16,

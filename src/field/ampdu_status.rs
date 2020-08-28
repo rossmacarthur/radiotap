@@ -25,7 +25,7 @@ impl_bitflags! {
 }
 
 /// Indicates that the frame was received as part of an A-MPDU.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AmpduStatus {
     /// The A-MPDU reference number.
     reference: u32,

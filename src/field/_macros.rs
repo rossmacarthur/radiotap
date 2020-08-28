@@ -57,7 +57,7 @@ macro_rules! impl_enum {
         }
     ) => {
         $(#[$outer])*
-        #[derive(Debug, Clone, Copy, PartialEq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
         pub enum $Field {
             $(
                 $(#[$inner $($args)*])*
@@ -69,19 +69,13 @@ macro_rules! impl_enum {
         impl $Field {
             pub(crate) fn from_bits(bits: $ty) -> Option<Self> {
                 match bits {
-                    $(
-                        $VALUE => Some(Self::$Variant),
-                    )+
+                    $( $VALUE => Some(Self::$Variant), )+
                     _ => None
                 }
             }
 
             pub(crate) fn into_inner(self) -> $ty {
-                match self {
-                    $(
-                        Self::$Variant => $VALUE,
-                    )+
-                }
+                match self { $( Self::$Variant => $VALUE, )+ }
             }
         }
     };
@@ -93,7 +87,7 @@ macro_rules! impl_newtype {
         pub struct $Field:ident($ty:ty);
     ) => {
         $(#[$outer])*
-        #[derive(Debug, Clone, Copy, PartialEq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
         pub struct $Field($ty);
 
         impl frombytes::FromBytes for $Field {
@@ -101,6 +95,12 @@ macro_rules! impl_newtype {
 
             fn from_bytes(bytes: &mut frombytes::Bytes) -> frombytes::Result<Self> {
                 bytes.read().map(Self)
+            }
+        }
+
+        impl From<$ty> for $Field {
+            fn from(t: $ty) -> Self {
+                Self(t)
             }
         }
 

@@ -57,7 +57,7 @@ impl_bitflags! {
 }
 
 /// The time the frame was transmitted or received.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Timestamp {
     ts: u64,
     accuracy: u16,

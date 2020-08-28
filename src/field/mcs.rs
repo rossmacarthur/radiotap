@@ -129,7 +129,7 @@ const NESS_BIT_0_SHIFT: u8 = 5;
 ///
 /// Other rate fields: [Rate](../struct.Rate.html),
 /// [VHT](../vht/struct.Vht.html)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Mcs {
     /// Indicates which information is known.
     known: Known,

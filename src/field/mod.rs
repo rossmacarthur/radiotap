@@ -37,7 +37,7 @@ impl_kind! {
     /// Not all of these types are parsed by this crate. The ones that have a
     /// corresponding field have the identical name in [`field`](index.html)
     /// module.
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[non_exhaustive]
     pub enum Type {
         Tsft            { bit:  0, align: 8, size:  8 },
@@ -76,7 +76,7 @@ impl_kind! {
 /////////////////////////////////////////////////////////////////////////
 
 /// A special field that describes a vendor namespace within a radiotap capture.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VendorNamespace {
     oui: Oui,
     sub_ns: u8,
@@ -328,7 +328,7 @@ impl_bitflags! {
 }
 
 /// The hop set and pattern for frequency-hopping radios.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Fhss {
     hop_set: u8,
     hop_pattern: u8,

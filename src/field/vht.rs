@@ -104,7 +104,7 @@ const RATE: [[f32; 8]; 80] = [
 
 /// An error returned when parsing a [`Bandwidth`](enum.Bandwidth.html) from the
 /// raw bits in [`Vht.bandwidth()`](struct.Vht.html#method.bandwidth).
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, Error)]
 #[error("failed to parse bandwidth from value `{0:x}`")]
 pub struct InvalidBandwidth(u8);
 
@@ -211,7 +211,7 @@ impl_bitflags! {
 ///
 /// This is created by the [`.users()`](struct.Vht.html#method.users) method on
 /// the [`Vht`](struct.Vht.html) field.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct User<'a> {
     vht: &'a Vht,
     index: u8,
@@ -226,7 +226,7 @@ pub struct User<'a> {
 ///
 /// Other rate fields: [Rate](../struct.Rate.html),
 /// [MCS](../mcs/struct.Mcs.html)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vht {
     known: Known,
     flags: Flags,
@@ -464,7 +464,7 @@ mod tests {
         assert_eq!(vht.has_stbc(), None);
         assert_eq!(vht.guard_interval(), Some(GuardInterval::Short));
         assert_eq!(vht.is_beamformed(), None);
-        assert_eq!(vht.bandwidth(), Some(Ok(Bandwidth::BW80)));
+        assert_eq!(vht.bandwidth().unwrap().unwrap(), Bandwidth::BW80);
         assert_eq!(vht.group_id(), None);
         assert_eq!(vht.partial_aid(), None);
         assert_eq!(

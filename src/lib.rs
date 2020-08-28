@@ -77,7 +77,7 @@ const PRESENCE_VENDOR_NAMESPACE: u32 = 30;
 const PRESENCE_EXT: u32 = 31;
 
 /// A radiotap namespace.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Namespace {
     /// The default radiotap namespace.
     Default,
@@ -86,7 +86,7 @@ pub enum Namespace {
 }
 
 /// A generic field yielded by the radiotap iterator.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Field {
     /// This field's namespace.
     namespace: Namespace,
@@ -183,7 +183,7 @@ pub struct IterDefault<'a> {
 }
 
 /// A parsed radiotap capture.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Header {
     length: usize,
@@ -325,7 +325,7 @@ impl<'a> Iter<'a> {
                         }
                         bit => {
                             break Ok(Some(Field {
-                                namespace: self.namespace.clone(),
+                                namespace: self.namespace,
                                 bit,
                             }))
                         }
