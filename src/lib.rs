@@ -52,7 +52,6 @@
 //! let rest = &capture[iter.length()..];
 //! ```
 
-pub mod bytes;
 mod error;
 pub mod field;
 mod prelude;
@@ -232,7 +231,7 @@ impl<'a> Iter<'a> {
     /// there is not enough bytes in the capture for the length specified in the
     /// radiotap header.
     pub fn new(bytes: &'a [u8]) -> Result<Self> {
-        let mut bytes = Bytes::new(bytes);
+        let mut bytes = Bytes::from_slice(bytes);
 
         // the radiotap version, only 0 is supported
         let version = bytes.read().context(ErrorKind::Header)?;
@@ -360,9 +359,9 @@ impl<'a> Iter<'a> {
     {
         let context = || ErrorKind::Read(std::any::type_name::<U>());
         self.bytes.align(kind.align()).with_context(context)?;
-        let start_pos = self.bytes.pos();
+        let start_pos = self.bytes.position();
         let field = U::from_bytes(&mut self.bytes).with_context(context)?;
-        let end_pos = self.bytes.pos();
+        let end_pos = self.bytes.position();
         if end_pos - start_pos != kind.size() {
             return Err(Error::new(context()));
         }
