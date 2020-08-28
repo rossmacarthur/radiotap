@@ -140,7 +140,8 @@ pub struct Mcs {
 }
 
 impl Bandwidth {
-    fn to_mhz(&self) -> u32 {
+    /// Returns the bandwidth in MHz.
+    pub fn to_mhz(&self) -> u8 {
         match self {
             Self::BW20 => 20,
             Self::BW40 => 40,
@@ -221,6 +222,12 @@ impl Mcs {
             (self.known & Known::NESS_BIT_1).bits >> NESS_BIT_1_SHIFT
                 | (self.flags & Flags::NESS_BIT_0).bits >> NESS_BIT_0_SHIFT
         })
+    }
+
+    /// Returns the number of spatial streams (1 - 4) calculated using the MCS
+    /// index.
+    pub fn nss(&self) -> Option<u8> {
+        self.index().map(|index| (index / 8) + 1)
     }
 
     /// Returns the data rate in megabits per second.

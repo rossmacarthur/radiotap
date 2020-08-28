@@ -249,7 +249,8 @@ impl From<mcs::Bandwidth> for Bandwidth {
 }
 
 impl Bandwidth {
-    fn to_mhz(&self) -> u32 {
+    /// Returns the bandwidth in MHz.
+    pub fn to_mhz(&self) -> u8 {
         match self {
             Self::BW20 => 20,
             Self::BW40 => 40,
