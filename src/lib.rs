@@ -546,13 +546,13 @@ mod tests {
         )
         .unwrap();
 
-        let radiotap = parse(&capture).unwrap();
-        assert_eq!(radiotap.length(), 56);
-        assert_eq!(radiotap.tsft.unwrap().into_inner(), 77325725);
+        let header = parse(&capture).unwrap();
+        assert_eq!(header.length(), 56);
+        assert_eq!(header.tsft.unwrap().into_inner(), 77325725);
         assert_eq!(
-            radiotap.flags.unwrap(),
+            header.flags.unwrap(),
             field::Flags::PREAMBLE | field::Flags::FCS
         );
-        assert_eq!(radiotap.rate.unwrap().to_mbps(), 24.0);
+        assert_eq!(header.rate.unwrap().to_mbps(), 24.0);
     }
 }

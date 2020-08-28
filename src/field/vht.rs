@@ -105,13 +105,33 @@ const RATE: [[f32; 8]; 80] = [
 /// An error returned when parsing a [`Bandwidth`](enum.Bandwidth.html) from the
 /// raw bits in [`Vht.bandwidth()`](struct.Vht.html#method.bandwidth).
 #[derive(Debug, Error, PartialEq)]
-#[error("failed to parse bandwidth from value `{0}`")]
-pub struct ParseBandwidthError(u8);
+#[error("failed to parse bandwidth from value `{0:x}`")]
+pub struct InvalidBandwidth(u8);
 
-/// An error returned when parsing the datarate.
 #[derive(Debug, Error)]
-#[error("failed to calculate datarate")]
-pub struct ParseDatarateError;
+enum InvalidDatarateKind {
+    /// The MCS index is invalid.
+    #[error("invalid MCS index `{0}`")]
+    Index(u8),
+    /// The NSS is invalid.
+    #[error("invalid NSS `{0}`")]
+    Nss(u8),
+    /// Failed to parse the bandwidth.
+    #[error(transparent)]
+    Bandwidth(#[from] InvalidBandwidth),
+    /// The MCS index, guard interval, NSS and bandwidth combination is invalid.
+    #[error("invalid MCS index, guard interval, NSS, and bandwidth combination")]
+    Mismatch,
+}
+
+/// An error returned when parsing the datarate in
+/// [`.to_mbps()`](struct.User.html#method.to_mbps).
+#[derive(Debug, Error)]
+#[error(transparent)]
+pub struct InvalidDatarate {
+    #[from]
+    kind: InvalidDatarateKind,
+}
 
 impl_enum! {
     /// The bandwidth.
@@ -283,13 +303,19 @@ impl User<'_> {
     }
 
     /// Returns the data rate in megabits per second.
-    pub fn to_mbps(&self) -> Option<result::Result<f32, ParseDatarateError>> {
-        if self.index > 9 || self.nss > 8 {
-            return Some(Err(ParseDatarateError));
+    pub fn to_mbps(&self) -> Option<result::Result<f32, InvalidDatarate>> {
+        if self.index > 9 {
+            return Some(Err(InvalidDatarateKind::Index(self.index).into()));
+        }
+        if self.nss > 8 {
+            return Some(Err(InvalidDatarateKind::Nss(self.nss).into()));
         }
         let bw = match self.vht.bandwidth()? {
             Ok(bw) => bw,
-            Err(_) => return Some(Err(ParseDatarateError)),
+            Err(err) => {
+                let inner: InvalidDatarateKind = err.into();
+                return Some(Err(inner.into()));
+            }
         };
         let b = match bw.to_mhz() {
             20 => 0,
@@ -302,7 +328,7 @@ impl User<'_> {
         let row: usize = (self.index + (self.nss - 1) * 10).into();
         let rate = RATE[row][col];
         if rate.is_nan() {
-            return Some(Err(ParseDatarateError));
+            return Some(Err(InvalidDatarateKind::Mismatch.into()));
         }
         Some(Ok(rate))
     }
@@ -354,10 +380,10 @@ impl Vht {
     }
 
     /// Returns the bandwidth.
-    pub fn bandwidth(&self) -> Option<result::Result<Bandwidth, ParseBandwidthError>> {
+    pub fn bandwidth(&self) -> Option<result::Result<Bandwidth, InvalidBandwidth>> {
         self.known.contains(Known::BW).some(|| {
             let bits = self.bandwidth & 0x1f;
-            Bandwidth::from_bits(bits).ok_or_else(|| ParseBandwidthError(bits))
+            Bandwidth::from_bits(bits).ok_or_else(|| InvalidBandwidth(bits))
         })
     }
 

@@ -50,8 +50,8 @@ const RATE: [[f32; 4]; 32] = [
 
 /// An error returned when parsing the datarate.
 #[derive(Debug, Error)]
-#[error("failed to calculate datarate")]
-pub struct ParseDatarateError;
+#[error("invalid MCS index `{0}`")]
+pub struct InvalidDatarate(u8);
 
 impl_enum! {
     /// The bandwidth.
@@ -224,11 +224,12 @@ impl Mcs {
     }
 
     /// Returns the data rate in megabits per second.
-    pub fn to_mbps(&self) -> Option<result::Result<f32, ParseDatarateError>> {
-        let row: usize = self.index()?.into();
-        if row > 31 {
-            return Some(Err(ParseDatarateError));
+    pub fn to_mbps(&self) -> Option<result::Result<f32, InvalidDatarate>> {
+        let index = self.index()?;
+        if index > 31 {
+            return Some(Err(InvalidDatarate(index)));
         }
+        let row: usize = index.into();
         let b = match self.bandwidth()?.to_mhz() {
             20 => 0,
             40 => 2,

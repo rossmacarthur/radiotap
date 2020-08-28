@@ -8,6 +8,19 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
+/// An error returned when parsing a [`Unit`](enum.Unit.html) from the raw bits
+/// in [`.unit()`](struct.Timestamp.html#method.unit).
+#[derive(Debug, Error)]
+#[error("failed to parse time unit from value `{0}`")]
+pub struct InvalidUnit(u8);
+
+/// An error returned when parsing a
+/// [`SamplingPosition`](enum.SamplingPosition.html) from the raw bits
+/// in [`.sampling_position()`](struct.Timestamp.html#method.sampling_position).
+#[derive(Debug, Error)]
+#[error("failed to parse sampling position from value `{0}`")]
+pub struct InvalidSamplingPosition(u8);
+
 impl_enum! {
     /// The time unit.
     pub enum Unit: u8 {
@@ -16,12 +29,6 @@ impl_enum! {
         Nanos = 2,
     }
 }
-
-/// An error returned when parsing a [`Unit`](enum.Unit.html) from the raw bits
-/// in [`Timestamp.unit()`](struct.Timestamp.html#method.unit).
-#[derive(Debug, Error)]
-#[error("failed to parse time unit from value `{0}`")]
-pub struct ParseUnitError(u8);
 
 impl_enum! {
     /// The sampling position.
@@ -38,14 +45,6 @@ impl_enum! {
         Unknown = 15,
     }
 }
-
-/// An error returned when parsing a
-/// [`SamplingPosition`](enum.SamplingPosition.html) from the raw bits
-/// in [`Timestamp.sampling_position()`](struct.Timestamp.html#method.
-/// sampling_position).
-#[derive(Debug, Error)]
-#[error("failed to parse sampling position from value `{0}`")]
-pub struct ParseSamplingPositionError(u8);
 
 impl_bitflags! {
     // Flags describing the timestamp.
@@ -94,41 +93,33 @@ impl Unit {
 }
 
 impl Timestamp {
-    /// Returns the raw timestamp value, in
-    /// [`.unit()`](struct.Timestamp.html#method.unit) units.
-    pub const fn ts(&self) -> u64 {
-        self.ts
-    }
-
     /// Returns the time unit of the timestamp.
-    pub fn unit(&self) -> result::Result<Unit, ParseUnitError> {
+    pub fn unit(&self) -> result::Result<Unit, InvalidUnit> {
         let bits = self.unit_position & 0x0f;
-        Unit::from_bits(bits).ok_or_else(|| ParseUnitError(bits))
+        Unit::from_bits(bits).ok_or_else(|| InvalidUnit(bits))
     }
 
     /// Returns the timestamp as a duration since the UNIX Epoch.
-    pub fn duration(&self) -> result::Result<Duration, ParseUnitError> {
+    pub fn duration(&self) -> result::Result<Duration, InvalidUnit> {
         self.unit().map(|unit| unit.duration(self.ts))
     }
 
     /// Returns the timestamp as a system time.
-    pub fn system_time(&self) -> result::Result<SystemTime, ParseUnitError> {
+    pub fn system_time(&self) -> result::Result<SystemTime, InvalidUnit> {
         self.duration().map(|d| SystemTime::UNIX_EPOCH + d)
     }
 
     /// Returns the accuracy of the timestamp as a duration.
-    pub fn accuracy(&self) -> Option<result::Result<Duration, ParseUnitError>> {
+    pub fn accuracy(&self) -> Option<result::Result<Duration, InvalidUnit>> {
         self.flags
             .contains(Flags::ACCURACY)
             .some(|| self.unit().map(|unit| unit.duration(self.accuracy.into())))
     }
 
     /// Returns the sampling position of the timstamp.
-    pub fn sampling_position(
-        &self,
-    ) -> result::Result<SamplingPosition, ParseSamplingPositionError> {
+    pub fn sampling_position(&self) -> result::Result<SamplingPosition, InvalidSamplingPosition> {
         let bits = self.unit_position >> 4;
-        SamplingPosition::from_bits(bits).ok_or_else(|| ParseSamplingPositionError(bits))
+        SamplingPosition::from_bits(bits).ok_or_else(|| InvalidSamplingPosition(bits))
     }
 
     /// Returns the flags describing the timestamp.
