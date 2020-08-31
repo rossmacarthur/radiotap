@@ -53,6 +53,7 @@ impl FromBytes for XChannel {
         let flags = bytes.read()?;
         let freq = bytes.read()?;
         let channel = bytes.read()?;
+        bytes.advance(1)?;
         Ok(Self {
             flags,
             freq,

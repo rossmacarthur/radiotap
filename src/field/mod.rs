@@ -358,3 +358,68 @@ impl Fhss {
         self.hop_pattern
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use std::fmt;
+
+    use frombytes::Bytes;
+
+    #[test]
+    fn every() {
+        fn check<U, E>(kind: Type) -> U
+        where
+            U: FromBytes<Error = E>,
+            E: fmt::Debug,
+        {
+            let mut vec = Vec::with_capacity(kind.size());
+            vec.resize(kind.size(), 0);
+            let mut bytes = Bytes::from_slice(vec.as_slice());
+            let result = U::from_bytes(&mut bytes).unwrap();
+            assert_eq!(
+                bytes.position(),
+                vec.len(),
+                "bad field: {}",
+                std::any::type_name::<U>()
+            );
+            result
+        }
+
+        macro_rules! check {
+            ($Field:ident) => {
+                let _field: $Field = check(Type::$Field);
+            };
+        }
+
+        check!(Tsft);
+        check!(Flags);
+        check!(Rate);
+        check!(Channel);
+        check!(Fhss);
+        check!(AntennaSignal);
+        check!(AntennaNoise);
+        check!(LockQuality);
+        check!(TxAttenuation);
+        check!(TxAttenuationDb);
+        check!(TxPower);
+        check!(Antenna);
+        check!(AntennaSignalDb);
+        check!(AntennaNoiseDb);
+        check!(RxFlags);
+        check!(TxFlags);
+        // check!(RtsRetries);
+        // check!(DataRetries);
+        check!(XChannel);
+        check!(Mcs);
+        check!(AmpduStatus);
+        check!(Vht);
+        check!(Timestamp);
+        // check!(He);
+        // check!(HeMu);
+        // check!(HeMuUser);
+        // check!(ZeroLenPsdu);
+        // check!(LSig);
+    }
+}

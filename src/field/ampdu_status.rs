@@ -42,6 +42,7 @@ impl FromBytes for AmpduStatus {
         let reference = bytes.read()?;
         let flags = bytes.read()?;
         let delim_crc = bytes.read()?;
+        bytes.advance(1)?;
         Ok(Self {
             reference,
             flags,
