@@ -58,6 +58,7 @@ mod prelude;
 mod util;
 
 use std::error::Error as StdError;
+use std::fmt;
 
 use crate::error::ResultExt;
 pub use crate::error::{Error, ErrorKind, Result};
@@ -183,7 +184,7 @@ pub struct IterDefault<'a> {
 }
 
 /// A parsed radiotap capture.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Header {
     length: usize,
@@ -492,6 +493,42 @@ pub fn parse(capture: &[u8]) -> Result<Header> {
         }
     }
     Ok(radiotap)
+}
+
+impl fmt::Debug for Header {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut d = f.debug_struct("radiotap::Header");
+        d.field("length", &self.length);
+        macro_rules! field {
+            ($attr:ident) => {
+                if let Some(field) = &self.$attr {
+                    d.field(stringify!($attr), field);
+                }
+            };
+        }
+        field!(tsft);
+        field!(flags);
+        field!(rate);
+        field!(channel);
+        field!(fhss);
+        field!(antenna_signal);
+        field!(antenna_noise);
+        field!(lock_quality);
+        field!(tx_attenuation);
+        field!(tx_attenuation_db);
+        field!(tx_power);
+        field!(antenna);
+        field!(antenna_signal_db);
+        field!(antenna_noise_db);
+        field!(rx_flags);
+        field!(tx_flags);
+        field!(xchannel);
+        field!(mcs);
+        field!(ampdu_status);
+        field!(vht);
+        field!(timestamp);
+        d.finish()
+    }
 }
 
 impl Header {
