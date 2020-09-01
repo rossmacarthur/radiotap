@@ -10,7 +10,7 @@ A parser for the [radiotap](http://www.radiotap.org/) capture format.
 
 Add to your project with
 
-```bash
+```sh
 cargo add radiotap
 ```
 
@@ -18,53 +18,41 @@ or directly editing your `Cargo.toml`
 
 ```toml
 [dependencies]
-radiotap = "1"
+radiotap = "2"
 ```
 
 See the documentation [here](https://docs.rs/radiotap).
 
-## Example usage
+## Usage
 
 See [examples/](examples/) for more.
 
-The `Radiotap::from_bytes(&capture)` constructor will parse all present fields
-into a Radiotap struct:
-
 ```rust
-let capture = [
-    0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-    166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-    4, 115, 0, 0, 0, 1, 63, 0, 0
-];
+// a capture off the wire or from a pcap file
+let capture = &[0, 0, 0xd, 0x0, 0x5, 0, 0, 0, 0x78, 0x56, 0x34, 0x12, 0, 0, 0, 0, 0x30, /* ... */ ];
 
-let radiotap = Radiotap::from_bytes(&capture).unwrap();
-println!("{:?}", radiotap.vht);
-```
+// parse the radiotap header from the capture into a `Header` struct
+let header: radiotap::Header = radiotap::parse(capture)?;
 
-If you just want to parse a few specific fields from the radiotap capture you
-can create an iterator using `RadiotapIterator::from_bytes(&capture)`:
+// get the length of the entire header
+let length = header.length();
 
-```rust
-let capture = [
-    0, 0, 56, 0, 107, 8, 52, 0, 185, 31, 155, 154, 0, 0, 0, 0, 20, 0, 124, 21, 64, 1, 213,
-    166, 1, 0, 0, 0, 64, 1, 1, 0, 124, 21, 100, 34, 249, 1, 0, 0, 0, 0, 0, 0, 255, 1, 80,
-    4, 115, 0, 0, 0, 1, 63, 0, 0
-];
-
-for element in RadiotapIterator::from_bytes(&capture).unwrap() {
-    match element {
-        Ok((field::Kind::VHT, data)) => {
-            let vht: field::VHT = field::from_bytes(data).unwrap();
-            println!("{:?}", vht);
-        },
-        _ => {}
-    }
+// Unpack the `rate` field if it is present
+if let radiotap::Header { rate: Some(rate), .. } = header {
+    assert_eq!(rate.to_mbps(), 24.0);
 }
+
+// using the length we can determine the rest of the capture
+// i.e. IEEE 802.11 header and body
+let rest = &capture[length..];
 ```
 
 ## License
 
-This project is dual licensed under the Apache 2.0 License and the MIT License.
+Licensed under either of
 
-See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT) for more
-details.
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
+  http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
