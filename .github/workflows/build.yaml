@@ -30,3 +30,25 @@ jobs:
 
     - name: Test
       run: cargo test
+
+
+  publish:
+    if: startsWith(github.event.ref, 'refs/tags')
+    needs: test
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Check tag against package version
+      run: grep '^version = ' Cargo.toml | grep -q "${GITHUB_REF#refs/tags/}"
+
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Publish
+      run: cargo publish --token "${{ secrets.CRATES_IO_TOKEN }}"
