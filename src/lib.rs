@@ -52,6 +52,9 @@
 //! let rest = &capture[iter.length()..];
 //! ```
 
+#![feature(min_const_generics)]
+
+mod bytes;
 mod error;
 pub mod field;
 mod prelude;

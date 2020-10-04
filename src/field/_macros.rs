@@ -90,11 +90,10 @@ macro_rules! impl_newtype {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
         pub struct $Field($ty);
 
-        impl frombytes::FromBytes for $Field {
-            type Error = frombytes::Error;
-
-            fn from_bytes(bytes: &mut frombytes::Bytes) -> frombytes::Result<Self> {
-                bytes.read().map(Self)
+        impl crate::bytes::FromBytes<{ std::mem::size_of::<$ty>() }> for $Field {
+            #[inline]
+            fn from_bytes(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
+                Self(crate::bytes::FromBytes::from_bytes(bytes))
             }
         }
 
@@ -134,11 +133,10 @@ macro_rules! impl_bitflags {
             }
         }
 
-        impl frombytes::FromBytes for $Field {
-            type Error = frombytes::Error;
-
-            fn from_bytes(bytes: &mut frombytes::Bytes) -> frombytes::Result<Self> {
-                bytes.read().map(Self::from_bits_truncate)
+        impl crate::bytes::FromBytes<{ std::mem::size_of::<$ty>() }> for $Field {
+            #[inline]
+            fn from_bytes(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
+                Self::from_bits_truncate(crate::bytes::FromBytes::from_bytes(bytes))
             }
         }
 
