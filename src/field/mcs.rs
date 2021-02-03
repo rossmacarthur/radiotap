@@ -192,7 +192,7 @@ impl Mcs {
     pub fn guard_interval(&self) -> Option<GuardInterval> {
         self.known
             .contains(Known::GI)
-            .some(|| self.flags.contains(Flags::GI).into())
+            .some(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
     }
 
     /// Returns the HT format.
@@ -206,7 +206,7 @@ impl Mcs {
     pub fn fec(&self) -> Option<Fec> {
         self.known
             .contains(Known::FEC)
-            .some(|| self.flags.contains(Flags::FEC).into())
+            .some(|| Fec::from_bool(self.flags.contains(Flags::FEC)))
     }
 
     /// Returns the number of STBCs.

@@ -370,7 +370,7 @@ impl Vht {
     pub fn guard_interval(&self) -> Option<GuardInterval> {
         self.known
             .contains(Known::GI)
-            .some(|| self.flags.contains(Flags::GI).into())
+            .some(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
     }
 
     /// Returns whether the frame was beamformed.
@@ -418,7 +418,7 @@ impl Vht {
             let stbc: u8 = self.has_stbc().unwrap_or(false).into();
             let nsts = nss << stbc;
             let id = i as u8;
-            let fec = ((self.coding & (1 << id)) > 0).into();
+            let fec = Fec::from_bool((self.coding & (1 << id)) > 0);
             user.replace(User {
                 vht: self,
                 index,

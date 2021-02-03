@@ -134,8 +134,8 @@ impl_enum! {
     }
 }
 
-impl From<bool> for GuardInterval {
-    fn from(b: bool) -> Self {
+impl GuardInterval {
+    fn from_bool(b: bool) -> Self {
         match b {
             false => Self::Long,
             true => Self::Short,
@@ -153,8 +153,8 @@ impl_enum! {
     }
 }
 
-impl From<bool> for Fec {
-    fn from(b: bool) -> Self {
+impl Fec {
+    fn from_bool(b: bool) -> Self {
         match b {
             false => Self::Bcc,
             true => Self::Ldpc,
