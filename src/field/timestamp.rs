@@ -96,7 +96,7 @@ impl Timestamp {
     /// Returns the time unit of the timestamp.
     pub fn unit(&self) -> result::Result<Unit, InvalidUnit> {
         let bits = self.unit_position & 0x0f;
-        Unit::from_bits(bits).ok_or_else(|| InvalidUnit(bits))
+        Unit::from_bits(bits).ok_or(InvalidUnit(bits))
     }
 
     /// Returns the timestamp as a duration since the UNIX Epoch.
@@ -119,7 +119,7 @@ impl Timestamp {
     /// Returns the sampling position of the timstamp.
     pub fn sampling_position(&self) -> result::Result<SamplingPosition, InvalidSamplingPosition> {
         let bits = self.unit_position >> 4;
-        SamplingPosition::from_bits(bits).ok_or_else(|| InvalidSamplingPosition(bits))
+        SamplingPosition::from_bits(bits).ok_or(InvalidSamplingPosition(bits))
     }
 
     /// Returns the flags describing the timestamp.

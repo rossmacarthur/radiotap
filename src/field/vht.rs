@@ -384,7 +384,7 @@ impl Vht {
     pub fn bandwidth(&self) -> Option<result::Result<Bandwidth, InvalidBandwidth>> {
         self.known.contains(Known::BW).some(|| {
             let bits = self.bandwidth & 0x1f;
-            Bandwidth::from_bits(bits).ok_or_else(|| InvalidBandwidth(bits))
+            Bandwidth::from_bits(bits).ok_or(InvalidBandwidth(bits))
         })
     }
 
