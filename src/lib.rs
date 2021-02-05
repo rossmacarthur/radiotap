@@ -62,7 +62,7 @@ use std::fmt;
 
 use crate::error::ResultExt;
 pub use crate::error::{Error, ErrorKind, Result};
-use crate::field::{Kind, Type, VendorNamespace};
+use crate::field::{Kind, Type};
 use crate::prelude::*;
 
 /// The radiotap header version.
@@ -77,22 +77,45 @@ const PRESENCE_VENDOR_NAMESPACE: u32 = 30;
 /// The presence bit representing another presence word follows.
 const PRESENCE_EXT: u32 = 31;
 
-/// A radiotap namespace.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Namespace {
+/// The default radiotap namespace.
+#[derive(Debug)]
+struct DefaultNamespace<'a> {
+    iter: &'a mut Iter<'a>,
+}
+
+/// A custom vendor namespace.
+#[derive(Debug)]
+struct VendorNamespace<'a> {
+    /// A reference to the iterator.
+    iter: &'a mut Iter<'a>,
+    /// This namespace's field.
+    field: &'a field::VendorNamespace,
+}
+
+#[derive(Debug)]
+pub enum Namespace<'a> {
     /// The default radiotap namespace.
-    Default,
+    Default(DefaultNamespace<'a>),
     /// A custom vendor namespace.
-    Vendor(VendorNamespace),
+    Vendor(VendorNamespace<'a>),
 }
 
 /// A generic field yielded by the radiotap iterator.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Field {
-    /// This field's namespace.
-    namespace: Namespace,
+#[derive(Debug)]
+struct Field<'a> {
     /// The presence bit for this field.
     bit: u32,
+    /// A reference to the iterator.
+    iter: &'a mut Iter<'a>,
+}
+
+/// A struct to track the current namespace in the iterator.
+#[derive(Debug, Clone)]
+enum CurrentNamespace {
+    /// The default radiotap namespace.
+    Default,
+    /// A custom vendor namespace.
+    Vendor(field::VendorNamespace),
 }
 
 /// An iterator over a radiotap capture.
@@ -146,7 +169,7 @@ pub struct Iter<'a> {
     /// The current bit position in the presence words.
     position: u32,
     /// The current namespace.
-    namespace: Namespace,
+    current_namespace: CurrentNamespace,
 }
 
 /// An iterator over a radiotap capture skipping any vendor namespaces.
@@ -210,18 +233,6 @@ pub struct Header {
     pub timestamp: Option<field::Timestamp>,
 }
 
-impl Field {
-    /// Returns this field's namespace.
-    pub const fn namespace(&self) -> &Namespace {
-        &self.namespace
-    }
-
-    /// Returns this field's presence bit number.
-    pub const fn bit(&self) -> u32 {
-        self.bit
-    }
-}
-
 impl<'a> Iter<'a> {
     /// Returns a new radiotap iterator.
     ///
@@ -260,7 +271,7 @@ impl<'a> Iter<'a> {
             length,
             presence,
             position: 0,
-            namespace: Namespace::Default,
+            current_namespace: CurrentNamespace::Default,
         })
     }
 
@@ -292,7 +303,7 @@ impl<'a> Iter<'a> {
 
     /// Returns the next field in the iterator.
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<Option<Field>> {
+    pub fn next(&'a mut self) -> Result<Option<Namespace<'a>>> {
         loop {
             match self.presence.get((self.position / 32) as usize) {
                 Some(presence) => {
@@ -307,7 +318,7 @@ impl<'a> Iter<'a> {
                     match bit {
                         PRESENCE_DEFAULT_NAMESPACE => {
                             // switching to radiotap namespace
-                            self.namespace = Namespace::Default;
+                            self.current_namespace = CurrentNamespace::Default;
                             continue;
                         }
                         PRESENCE_VENDOR_NAMESPACE => {
@@ -315,8 +326,9 @@ impl<'a> Iter<'a> {
                             let context =
                                 || ErrorKind::Read(std::any::type_name::<VendorNamespace>());
                             self.bytes.align(2).with_context(context)?;
-                            self.namespace =
-                                Namespace::Vendor(self.bytes.read().with_context(context)?);
+                            self.current_namespace =
+                                CurrentNamespace::Vendor(self.bytes.read().with_context(context)?);
+
                             continue;
                         }
                         PRESENCE_EXT => {
@@ -324,10 +336,18 @@ impl<'a> Iter<'a> {
                             continue;
                         }
                         bit => {
-                            break Ok(Some(Field {
-                                namespace: self.namespace,
-                                bit,
-                            }))
+                            let element = match self.current_namespace {
+                                CurrentNamespace::Default => {
+                                    Namespace::Default(DefaultNamespace { iter: self })
+                                }
+                                CurrentNamespace::Vendor(field) => {
+                                    Namespace::Vendor(VendorNamespace {
+                                        iter: self,
+                                        field: &field,
+                                    })
+                                }
+                            };
+                            break Ok(Some(element));
                         }
                     }
                 }
@@ -335,19 +355,35 @@ impl<'a> Iter<'a> {
             }
         }
     }
+}
+
+impl Field<'_> {
+    /// Returns this field's namespace.
+    pub const fn namespace(&self) -> &Namespace {
+        &self.current_namespace
+    }
+
+    /// Returns this field's presence bit number.
+    pub const fn bit(&self) -> u32 {
+        self.bit
+    }
 
     /// Skip the given kind of field.
-    pub fn skip<T: Kind>(&mut self, kind: T) -> Result<()> {
-        self.bytes.align(kind.align()).context(ErrorKind::Skip)?;
-        self.bytes.advance(kind.size()).context(ErrorKind::Skip)?;
+    pub fn skip(self, align: usize, size: usize) -> Result<()> {
+        self.iter.bytes.align(align).context(ErrorKind::Skip)?;
+        self.iter.bytes.advance(size).context(ErrorKind::Skip)?;
         Ok(())
     }
 
-    /// Skip the given vendor namespace.
-    pub fn skip_vns(&mut self, vns: &VendorNamespace) -> Result<()> {
-        self.bytes
-            .advance(vns.skip_length())
-            .context(ErrorKind::Skip)
+    /// Skip the vendor namespace.
+    pub fn skip_vns(self) -> Result<()> {
+        if let Namespace::Vendor(vns) = self.current_namespace {
+            self.iter
+                .bytes
+                .advance(vns.skip_length())
+                .context(ErrorKind::Skip)?;
+        }
+        Ok(())
     }
 
     /// Reads the given kind of field.
@@ -358,10 +394,10 @@ impl<'a> Iter<'a> {
         E: Into<Box<dyn StdError + Send + Sync>>,
     {
         let context = || ErrorKind::Read(std::any::type_name::<U>());
-        self.bytes.align(kind.align()).with_context(context)?;
-        let start_pos = self.bytes.position();
-        let field = U::from_bytes(&mut self.bytes).with_context(context)?;
-        let end_pos = self.bytes.position();
+        self.iter.bytes.align(kind.align()).with_context(context)?;
+        let start_pos = self.iter.bytes.position();
+        let field = U::from_bytes(&mut self.iter.bytes).with_context(context)?;
+        let end_pos = self.iter.bytes.position();
         if end_pos - start_pos != kind.size() {
             return Err(Error::new(context()));
         }
@@ -398,6 +434,7 @@ impl IterDefault<'_> {
             Some(Field {
                 namespace: Namespace::Default,
                 bit,
+                ..
             }) => Ok(Type::from_bit(bit)),
 
             Some(Field {
