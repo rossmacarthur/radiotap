@@ -113,7 +113,7 @@ impl Timestamp {
     pub fn accuracy(&self) -> Option<result::Result<Duration, InvalidUnit>> {
         self.flags
             .contains(Flags::ACCURACY)
-            .some(|| self.unit().map(|unit| unit.duration(self.accuracy.into())))
+            .then(|| self.unit().map(|unit| unit.duration(self.accuracy.into())))
     }
 
     /// Returns the sampling position of the timstamp.

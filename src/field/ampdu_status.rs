@@ -56,28 +56,28 @@ impl AmpduStatus {
     pub fn is_zero_len(&self) -> Option<bool> {
         self.flags
             .contains(Flags::REPORT_ZERO_LEN)
-            .some(|| self.flags.contains(Flags::IS_ZERO_LEN))
+            .then(|| self.flags.contains(Flags::IS_ZERO_LEN))
     }
 
     /// Whether this frame is the last subframe of this A-MPDU.
     pub fn is_last(&self) -> Option<bool> {
         self.flags
             .contains(Flags::LAST_KNOWN)
-            .some(|| self.flags.contains(Flags::IS_LAST))
+            .then(|| self.flags.contains(Flags::IS_LAST))
     }
 
     /// Returns the A-MPDU subframe delimiter CRC value.
     pub fn delim_crc(&self) -> Option<u8> {
         self.flags
             .contains(Flags::DELIM_CRC_KNOWN)
-            .some(|| self.delim_crc)
+            .then(|| self.delim_crc)
     }
 
     /// Whether there is an EOF on this A-MPDU subframe.
     pub fn has_eof(&self) -> Option<bool> {
         self.flags
             .contains(Flags::EOF_KNOWN)
-            .some(|| self.flags.contains(Flags::EOF))
+            .then(|| self.flags.contains(Flags::EOF))
     }
 
     /// Returns the raw A-MPDU flags.

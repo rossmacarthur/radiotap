@@ -363,26 +363,26 @@ impl Vht {
     pub fn has_stbc(&self) -> Option<bool> {
         self.known
             .contains(Known::STBC)
-            .some(|| self.flags.contains(Flags::STBC))
+            .then(|| self.flags.contains(Flags::STBC))
     }
 
     /// Returns the guard interval.
     pub fn guard_interval(&self) -> Option<GuardInterval> {
         self.known
             .contains(Known::GI)
-            .some(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
+            .then(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
     }
 
     /// Returns whether the frame was beamformed.
     pub fn is_beamformed(&self) -> Option<bool> {
         self.known
             .contains(Known::BF)
-            .some(|| self.flags.contains(Flags::BF))
+            .then(|| self.flags.contains(Flags::BF))
     }
 
     /// Returns the bandwidth.
     pub fn bandwidth(&self) -> Option<result::Result<Bandwidth, InvalidBandwidth>> {
-        self.known.contains(Known::BW).some(|| {
+        self.known.contains(Known::BW).then(|| {
             let bits = self.bandwidth & 0x1f;
             Bandwidth::from_bits(bits).ok_or(InvalidBandwidth(bits))
         })
@@ -393,7 +393,7 @@ impl Vht {
     /// The group ID can be used to differentiate between SU PPDUs (group ID is
     /// 0 or 63) and MU PPDUs (group ID is 1 through 62).
     pub fn group_id(&self) -> Option<u8> {
-        self.known.contains(Known::G_ID).some(|| self.group_id)
+        self.known.contains(Known::G_ID).then(|| self.group_id)
     }
 
     /// Returns the partial aid.
@@ -402,7 +402,7 @@ impl Vht {
     /// transmissions are destined to a STA or not, used in conjunction with
     /// group ID.
     pub fn partial_aid(&self) -> Option<u16> {
-        self.known.contains(Known::P_AID).some(|| self.partial_aid)
+        self.known.contains(Known::P_AID).then(|| self.partial_aid)
     }
 
     /// Returns the VHT users.

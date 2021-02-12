@@ -180,45 +180,45 @@ impl Mcs {
     pub fn bandwidth(&self) -> Option<Bandwidth> {
         self.known
             .contains(Known::BW)
-            .some(|| Bandwidth::from_bits((self.flags & Flags::BW_MASK).bits).unwrap())
+            .then(|| Bandwidth::from_bits((self.flags & Flags::BW_MASK).bits).unwrap())
     }
 
     /// Returns the MCS index.
     pub fn index(&self) -> Option<u8> {
-        self.known.contains(Known::INDEX).some(|| self.index)
+        self.known.contains(Known::INDEX).then(|| self.index)
     }
 
     /// Returns the guard interval.
     pub fn guard_interval(&self) -> Option<GuardInterval> {
         self.known
             .contains(Known::GI)
-            .some(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
+            .then(|| GuardInterval::from_bool(self.flags.contains(Flags::GI)))
     }
 
     /// Returns the HT format.
     pub fn format(&self) -> Option<Format> {
         self.known
             .contains(Known::FMT)
-            .some(|| self.flags.contains(Flags::FMT).into())
+            .then(|| self.flags.contains(Flags::FMT).into())
     }
 
     /// Returns the FEC type.
     pub fn fec(&self) -> Option<Fec> {
         self.known
             .contains(Known::FEC)
-            .some(|| Fec::from_bool(self.flags.contains(Flags::FEC)))
+            .then(|| Fec::from_bool(self.flags.contains(Flags::FEC)))
     }
 
     /// Returns the number of STBCs.
     pub fn stbc(&self) -> Option<u8> {
         self.known
             .contains(Known::STBC)
-            .some(|| (self.flags & Flags::STBC_MASK).bits >> STBC_SHIFT)
+            .then(|| (self.flags & Flags::STBC_MASK).bits >> STBC_SHIFT)
     }
 
     /// Return the number of extension spatial streams.
     pub fn ness(&self) -> Option<u8> {
-        self.known.contains(Known::NESS).some(|| {
+        self.known.contains(Known::NESS).then(|| {
             (self.known & Known::NESS_BIT_1).bits >> NESS_BIT_1_SHIFT
                 | (self.flags & Flags::NESS_BIT_0).bits >> NESS_BIT_0_SHIFT
         })
