@@ -135,6 +135,10 @@ pub struct InvalidDatarate {
 
 impl_enum! {
     /// The bandwidth.
+    #[allow(
+        clippy::unknown_clippy_lints,
+        clippy::upper_case_acronyms,
+    )]
     pub enum Bandwidth: u8 {
         BW20 = 0,
         BW40 = 1,

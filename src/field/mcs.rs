@@ -55,6 +55,10 @@ pub struct InvalidDatarate(u8);
 
 impl_enum! {
     /// The bandwidth.
+    #[allow(
+        clippy::unknown_clippy_lints,
+        clippy::upper_case_acronyms,
+    )]
     pub enum Bandwidth: u8 {
         BW20 = 0,
         BW40 = 1,
@@ -261,6 +265,8 @@ impl Mcs {
 mod tests {
     use super::*;
 
+    use crate::assert_eq_f32;
+
     #[test]
     fn basic() {
         let mcs = Mcs::from_hex("1f0407").unwrap();
@@ -279,12 +285,12 @@ mod tests {
         assert_eq!(mcs.fec(), Some(Fec::Bcc));
         assert_eq!(mcs.stbc(), None);
         assert_eq!(mcs.ness(), None);
-        assert_eq!(mcs.to_mbps().unwrap().unwrap(), 72.2);
+        assert_eq_f32!(mcs.to_mbps().unwrap().unwrap(), 72.2);
     }
 
     #[test]
     fn datarate() {
         let mcs = Mcs::from_hex("1f140f").unwrap();
-        assert_eq!(mcs.to_mbps().unwrap().unwrap(), 144.4);
+        assert_eq_f32!(mcs.to_mbps().unwrap().unwrap(), 144.4);
     }
 }

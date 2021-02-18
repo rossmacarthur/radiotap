@@ -374,8 +374,7 @@ mod tests {
             U: FromBytes<Error = E>,
             E: fmt::Debug,
         {
-            let mut vec = Vec::with_capacity(kind.size());
-            vec.resize(kind.size(), 0);
+            let vec = vec![0; kind.size()];
             let mut bytes = Bytes::from_slice(vec.as_slice());
             let result = U::from_bytes(&mut bytes).unwrap();
             assert_eq!(
