@@ -549,6 +549,13 @@ impl Header {
 mod tests {
     use super::*;
 
+    #[macro_export]
+    macro_rules! assert_eq_f32 {
+        ($left:expr, $right:expr $(,)?) => {{
+            assert!(($left - $right).abs() < f32::EPSILON);
+        }};
+    }
+
     #[test]
     fn basic() {
         // Radiotap Header v0, Length 56
@@ -590,6 +597,6 @@ mod tests {
             header.flags.unwrap(),
             field::Flags::PREAMBLE | field::Flags::FCS
         );
-        assert_eq!(header.rate.unwrap().to_mbps(), 24.0);
+        assert_eq_f32!(header.rate.unwrap().to_mbps(), 24.0);
     }
 }
