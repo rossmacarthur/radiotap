@@ -128,8 +128,7 @@ const NESS_BIT_0_SHIFT: u8 = 5;
 ///
 /// The IEEE 802.11n data rate index.
 ///
-/// Other rate fields: [Rate](../struct.Rate.html),
-/// [VHT](../vht/struct.Vht.html)
+/// Other rate fields: [`Rate`][super::Rate], [`Vht`][super::Vht]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Mcs {
     /// Indicates which information is known.

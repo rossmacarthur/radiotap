@@ -102,8 +102,8 @@ const RATE: [[f32; 8]; 80] = [
     [    NAN,    NAN,    NAN,    NAN,  3120.0,  3466.7,  6240.0,  6933.3  ],
 ];
 
-/// An error returned when parsing a [`Bandwidth`](enum.Bandwidth.html) from the
-/// raw bits in [`Vht.bandwidth()`](struct.Vht.html#method.bandwidth).
+/// An error returned when parsing a [`Bandwidth`] from the raw bits in
+/// [`.bandwidth()`][Vht::bandwidth].
 #[derive(Debug, Error)]
 #[error("failed to parse bandwidth from value `{0:x}`")]
 pub struct InvalidBandwidth(u8);
@@ -125,7 +125,7 @@ enum InvalidDatarateKind {
 }
 
 /// An error returned when parsing the datarate in
-/// [`.to_mbps()`](struct.User.html#method.to_mbps).
+/// [`.to_mbps()`][User::to_mbps].
 #[derive(Debug, Error)]
 #[error(transparent)]
 pub struct InvalidDatarate {
@@ -210,8 +210,7 @@ impl_bitflags! {
 
 /// A VHT user.
 ///
-/// This is created by the [`.users()`](struct.Vht.html#method.users) method on
-/// the [`Vht`](struct.Vht.html) field.
+/// This is created by the [`.users()`][Vht::users] method on the [`Vht`] field.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct User<'a> {
     vht: &'a Vht,
@@ -225,8 +224,7 @@ pub struct User<'a> {
 ///
 /// The IEEE 802.11ac data rate index.
 ///
-/// Other rate fields: [Rate](../struct.Rate.html),
-/// [MCS](../mcs/struct.Mcs.html)
+/// Other rate fields: [`Rate`][super::Rate], [`Mcs`][super::Mcs]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vht {
     known: Known,

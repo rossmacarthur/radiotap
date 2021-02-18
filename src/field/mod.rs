@@ -31,12 +31,12 @@ impl_kind! {
     /// The type of radiotap field.
     ///
     /// Each variant corresponds to unique field in the radiotap capture.
-    /// [`Kind`](trait.Kind.html) is implemented to describe the alignment
-    /// and size of each field, so that the iterator knows how to handle it.
+    /// [`Kind`] is implemented to describe the alignment and size of each
+    /// field, so that the iterator knows how to handle it.
     ///
     /// Not all of these types are parsed by this crate. The ones that have a
-    /// corresponding field have the identical name in [`field`](index.html)
-    /// module.
+    /// corresponding field have the identical name in the
+    /// [`field`][crate::field] module.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     #[non_exhaustive]
     pub enum Type {
@@ -192,12 +192,11 @@ impl_newtype! {
 impl_newtype! {
     /// Tx/Rx legacy data rate.
     ///
-    /// Other rate fields: [MCS](./mcs/struct.Mcs.html),
-    /// [VHT](./vht/struct.Vht.html)
+    /// Other rate fields: [`Mcs`], [`Vht`]
     ///
     /// The raw value's unit is 500 Kbps. Use the
-    /// [`to_mbps`](struct.Rate.html#method.to_mbps) function to get the rate in
-    /// megabits per second.
+    /// [`.to_mbps()`][`Rate::to_mbps`] method to get the rate in megabits per
+    /// second.
     pub struct Rate(u8);
 }
 
