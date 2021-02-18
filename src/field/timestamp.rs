@@ -8,15 +8,14 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-/// An error returned when parsing a [`Unit`](enum.Unit.html) from the raw bits
-/// in [`.unit()`](struct.Timestamp.html#method.unit).
+/// An error returned when parsing a [`Unit`] from the raw bits in
+/// [`.unit()`][Timestamp::unit].
 #[derive(Debug, Error)]
 #[error("failed to parse time unit from value `{0}`")]
 pub struct InvalidUnit(u8);
 
-/// An error returned when parsing a
-/// [`SamplingPosition`](enum.SamplingPosition.html) from the raw bits
-/// in [`.sampling_position()`](struct.Timestamp.html#method.sampling_position).
+/// An error returned when parsing a  [`SamplingPosition`] from the raw bits
+/// in [`.sampling_position()`][Timestamp::sampling_position].
 #[derive(Debug, Error)]
 #[error("failed to parse sampling position from value `{0}`")]
 pub struct InvalidSamplingPosition(u8);

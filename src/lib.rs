@@ -5,7 +5,7 @@
 //! ### Parsing all fields
 //!
 //! The easiest way to use this crate is to parse a slice of bytes into a
-//! [`Header`](struct.Header.html) struct.
+//! [`Header`] struct.
 //!
 //! ```
 //! // a capture off the wire or from a pcap file
@@ -100,8 +100,8 @@ pub struct Field {
 /// This type doesn't actually implement `Iterator` because it is fallible and
 /// each yielded field requires that it is either explicitly read or skipped. If
 /// you do not care about any vendor namespaces then you will want to use the
-/// [`into_default`](struct.Iter.html#method.into_default) method to produce a
-/// new 'filtered' iterator that skips over the vendor namespaces.
+/// [`.into_default()`][Iter::into_default] method to produce a new 'filtered'
+/// iterator that skips over the vendor namespaces.
 ///
 /// # Examples
 ///
@@ -151,9 +151,8 @@ pub struct Iter<'a> {
 
 /// An iterator over a radiotap capture skipping any vendor namespaces.
 ///
-/// This struct is created by the
-/// [`into_default`](struct.Iter.html#method.into_default) method on
-/// [`Iter`](struct.Iter.html).
+/// This struct is created by the [`.into_default()`][Iter::into_default] method
+/// on [`Iter`].
 ///
 /// This type doesn't actually implement Iterator because it is fallible and
 /// each yielded field requires that it is either explicitly read or skipped.
@@ -276,7 +275,7 @@ impl<'a> Iter<'a> {
     }
 
     /// Produce a new iterator that filters out any vendor namespaces and yields
-    /// a [`Type`](field/enum.Type.html) instead.
+    /// a [`Type`] instead.
     ///
     /// # Examples
     ///
