@@ -4,17 +4,22 @@ use syn::*;
 
 use crate::args::Args;
 
+struct Params {
+    align: LitInt,
+    size: LitInt,
+}
+
 pub fn derive(input: &DeriveInput) -> Result<TokenStream> {
     match &input.data {
-        Data::Struct(_) => derive_struct(input),
+        Data::Struct(_) => derive_impl(input),
         _ => bail!(input, "`#[derive(Field)]` is only supported on structs"),
     }
 }
 
-pub fn derive_struct(input: &DeriveInput) -> Result<TokenStream> {
+fn derive_impl(input: &DeriveInput) -> Result<TokenStream> {
     let ty = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
-    let Args { align, size } = Args::new(input)?;
+    let Params { align, size } = parse_attr(input)?;
     Ok(quote! {
         #[automatically_derived]
         impl #impl_generics ::radiotap::field::Field<#align, #size> for #ty #ty_generics
@@ -26,4 +31,24 @@ pub fn derive_struct(input: &DeriveInput) -> Result<TokenStream> {
             }
         }
     })
+}
+
+fn parse_attr(input: &DeriveInput) -> Result<Params> {
+    for attr in &input.attrs {
+        if attr.path.is_ident("field") {
+            let mut args: Args = attr.parse_args()?;
+            let mut pop = |k| {
+                args.remove_lit_int(k)?
+                    .ok_or_else(|| error!(&attr, "missing `{}`", k))
+            };
+            let align = pop("align")?;
+            let size = pop("size")?;
+            args.ensure_empty()?;
+            return Ok(Params { align, size });
+        }
+    }
+    bail!(
+        input,
+        "`#[derive(Field)]` requires a `#[field(..)]` attribute"
+    );
 }

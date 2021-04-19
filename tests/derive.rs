@@ -1,46 +1,44 @@
-use radiotap::field::Field;
+use radiotap::field::{Field, FromArray};
 
 #[test]
-fn basic_struct() {
-    #[derive(Debug, PartialEq, Field)]
-    #[field(align = 1, size = 3)]
+fn derive_basic_struct() {
+    #[derive(Debug, PartialEq, FromArray)]
+    struct SubTest(i8);
+
+    #[derive(Debug, PartialEq, Field, FromArray)]
+    #[field(align = 1, size = 6)]
     struct Test {
         a: u8,
         b: i16,
+        c: [u8; 2],
+        d: (),
+        #[field(size = 1)]
+        e: SubTest,
     }
 
-    impl From<[u8; 3]> for Test {
-        fn from(bytes: [u8; 3]) -> Self {
-            Self {
-                a: bytes[0],
-                b: i16::from_le_bytes({
-                    let ptr = bytes[1..3].as_ptr() as *const [u8; 2];
-                    unsafe { *ptr }
-                }),
-            }
+    assert_eq!(
+        Test::from_bytes([1, 2, 3, 4, 5, 6]),
+        Test {
+            a: 1,
+            b: 0x0302,
+            c: [4, 5],
+            d: (),
+            e: SubTest(6)
         }
-    }
-
-    assert_eq!(Test::from_bytes([0, 0, 0]), Test { a: 0, b: 0 });
+    );
 }
 
 #[test]
-fn basic_new_type_struct() {
-    #[derive(Debug, PartialEq, Field)]
-    #[field(align = 1, size = 3)]
-    struct Test(u8, i16);
+fn derive_new_type_struct() {
+    #[derive(Debug, PartialEq, FromArray)]
+    struct SubTest(i8);
 
-    impl From<[u8; 3]> for Test {
-        fn from(bytes: [u8; 3]) -> Self {
-            Self(
-                bytes[0],
-                i16::from_le_bytes({
-                    let ptr = bytes[1..3].as_ptr() as *const [u8; 2];
-                    unsafe { *ptr }
-                }),
-            )
-        }
-    }
+    #[derive(Debug, PartialEq, Field, FromArray)]
+    #[field(align = 1, size = 6)]
+    struct Test(u8, i16, [u8; 2], (), #[field(size = 1)] SubTest);
 
-    assert_eq!(Test::from_bytes([0, 0, 0]), Test(0, 0));
+    assert_eq!(
+        Test::from_bytes([1, 2, 3, 4, 5, 6]),
+        Test(1, 0x0302, [4, 5], (), SubTest(6))
+    );
 }

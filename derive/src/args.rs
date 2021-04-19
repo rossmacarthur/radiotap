@@ -2,32 +2,17 @@ use std::collections::HashMap;
 
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{DeriveInput, Error, Lit, LitInt, MetaNameValue, Result, Token};
+use syn::{Error, Lit, LitInt, MetaNameValue, Result, Token};
 
 pub struct Args {
-    pub align: LitInt,
-    pub size: LitInt,
-}
-
-impl Args {
-    pub fn new(input: &DeriveInput) -> Result<Self> {
-        for attr in &input.attrs {
-            if attr.path.is_ident("field") {
-                return attr.parse_args();
-            }
-        }
-        bail!(
-            input,
-            "`#[derive(Field)]` requires a `#[field(..)]` attribute"
-        );
-    }
+    args: HashMap<String, MetaNameValue>,
 }
 
 impl Parse for Args {
     fn parse(tokens: ParseStream) -> Result<Self> {
         let parsed = Punctuated::<MetaNameValue, Token![,]>::parse_terminated(tokens)?;
 
-        let mut args: HashMap<_, _> = parsed
+        let args: HashMap<_, _> = parsed
             .iter()
             .map(|kv| {
                 let key = kv
@@ -35,26 +20,31 @@ impl Parse for Args {
                     .get_ident()
                     .ok_or_else(|| error!(&kv.path, "expected identifier"))?
                     .to_string();
-                Ok((key, kv))
+                Ok((key, kv.clone()))
             })
             .collect::<Result<_>>()?;
 
-        let mut get = |key: &str| {
-            args.remove(key)
-                .ok_or_else(|| error!(&parsed, "missing `{}`", key))
-                .and_then(|kv| match &kv.lit {
-                    Lit::Int(v) => Ok(v.clone()),
-                    lit => bail!(lit, "expected integer"),
-                })
-        };
+        Ok(Args { args })
+    }
+}
 
-        let align = get("align")?;
-        let size = get("size")?;
+impl Args {
+    pub fn remove_lit_int(&mut self, key: &str) -> Result<Option<LitInt>> {
+        self.args
+            .remove(key)
+            .map(|kv| match &kv.lit {
+                Lit::Int(v) => Ok(v.clone()),
+                lit => bail!(lit, "expected integer"),
+            })
+            .transpose()
+    }
 
-        if args.is_empty() {
-            Ok(Self { align, size })
+    pub fn ensure_empty(self) -> Result<()> {
+        if self.args.is_empty() {
+            Ok(())
         } else {
-            let error = args
+            let error = self
+                .args
                 .into_iter()
                 .map(|(_, kv)| error!(kv, "unexpected attribute argument"))
                 .reduce(|mut a, b| {
