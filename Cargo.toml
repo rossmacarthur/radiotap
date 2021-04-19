@@ -14,8 +14,12 @@ include = ["src/**/*", "LICENSE-*", "README.md"]
 [dependencies]
 bitflags = "1"
 thiserror = "1"
+radiotap-derive = { version = "=2.0.0-beta.1", path = "derive" }
 
 [dev-dependencies]
 anyhow = "1.0.32"
 hex = "0.4.2"
 pcap = "0.7.0"
+
+[workspace]
+members = ["derive"]

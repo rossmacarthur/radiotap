@@ -5,6 +5,8 @@
 #[macro_use]
 mod _macros;
 
+pub use radiotap_derive::*;
+
 /// An organizationally unique identifier.
 pub type Oui = [u8; 3];
 
@@ -25,6 +27,11 @@ fn splice<const M: usize, const N: usize>(arr: [u8; M], offset: usize) -> [u8; N
 /////////////////////////////////////////////////////////////////////////
 // The type of radiotap field.
 /////////////////////////////////////////////////////////////////////////
+
+/// Defines a radiotap field.
+pub trait Field<const ALIGN: usize, const SIZE: usize>: Sized {
+    fn from_bytes(bytes: [u8; SIZE]) -> Self;
+}
 
 /// A kind of radiotap field.
 ///

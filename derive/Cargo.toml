@@ -1,0 +1,18 @@
+[package]
+name = "radiotap-derive"
+version = "2.0.0-beta.1"
+authors = ["Ross MacArthur <ross@macarthur.io>"]
+edition = "2018"
+description = "A parser for the radiotap capture format."
+readme = "../README.md"
+homepage = "https://github.com/rossmacarthur/radiotap"
+repository = "https://github.com/rossmacarthur/radiotap"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+proc-macro2 = "1.0"
+syn = "1.0"
