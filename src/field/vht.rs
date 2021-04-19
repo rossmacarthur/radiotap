@@ -6,8 +6,7 @@ use std::result;
 use thiserror::Error;
 
 use crate::field::mcs;
-use crate::field::{Fec, GuardInterval};
-use crate::prelude::*;
+use crate::field::{splice, Fec, GuardInterval};
 
 #[rustfmt::skip]
 const RATE: [[f32; 8]; 80] = [
@@ -337,18 +336,16 @@ impl User<'_> {
     }
 }
 
-impl FromBytes for Vht {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let known = bytes.read()?;
-        let flags = bytes.read()?;
-        let bandwidth = bytes.read()?;
-        let mcs_nss = bytes.read()?;
-        let coding = bytes.read()?;
-        let group_id = bytes.read()?;
-        let partial_aid = bytes.read()?;
-        Ok(Self {
+impl From<[u8; 12]> for Vht {
+    fn from(bytes: [u8; 12]) -> Self {
+        let known = Known::from(splice(bytes, 0));
+        let flags = Flags::from(bytes[2]);
+        let bandwidth = bytes[3];
+        let mcs_nss = splice(bytes, 4);
+        let coding = bytes[8];
+        let group_id = bytes[9];
+        let partial_aid = u16::from_le_bytes(splice(bytes, 10));
+        Self {
             known,
             flags,
             bandwidth,
@@ -356,7 +353,7 @@ impl FromBytes for Vht {
             coding,
             group_id,
             partial_aid,
-        })
+        }
     }
 }
 
@@ -447,9 +444,11 @@ impl Vht {
 mod tests {
     use super::*;
 
+    use crate::hex::FromHex;
+
     #[test]
     fn basic() {
-        let vht = Vht::from_hex("440004041200000000000000").unwrap();
+        let vht = Vht::from_hex("440004041200000000000000");
         assert_eq!(
             vht,
             Vht {
@@ -487,7 +486,7 @@ mod tests {
     }
 
     fn check_datarate(hex: &str, datarate: f32) {
-        let vht = Vht::from_hex(hex).unwrap();
+        let vht = Vht::from_hex(hex);
         let users: Vec<_> = vht.users().into();
         let datarates: Vec<_> = users
             .into_iter()

@@ -1,6 +1,6 @@
 //! Defines the XChannel field.
 
-use crate::prelude::*;
+use crate::field::splice;
 
 impl_bitflags! {
     /// Extended flags describing the channel.
@@ -46,19 +46,16 @@ pub struct XChannel {
     channel: u8,
 }
 
-impl FromBytes for XChannel {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let flags = bytes.read()?;
-        let freq = bytes.read()?;
-        let channel = bytes.read()?;
-        bytes.advance(1)?;
-        Ok(Self {
+impl From<[u8; 8]> for XChannel {
+    fn from(bytes: [u8; 8]) -> Self {
+        let flags = Flags::from(splice(bytes, 0));
+        let freq = u16::from_le_bytes(splice(bytes, 4));
+        let channel = bytes[7];
+        Self {
             flags,
             freq,
             channel,
-        })
+        }
     }
 }
 

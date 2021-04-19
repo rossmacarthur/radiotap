@@ -1,6 +1,6 @@
 //! Defines the A-MPDU Status field.
 
-use crate::prelude::*;
+use crate::field::splice;
 
 impl_bitflags! {
     /// Flags describing the A-MPDU.
@@ -35,19 +35,16 @@ pub struct AmpduStatus {
     delim_crc: u8,
 }
 
-impl FromBytes for AmpduStatus {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let reference = bytes.read()?;
-        let flags = bytes.read()?;
-        let delim_crc = bytes.read()?;
-        bytes.advance(1)?;
-        Ok(Self {
+impl From<[u8; 8]> for AmpduStatus {
+    fn from(bytes: [u8; 8]) -> Self {
+        let reference = u32::from_le_bytes(splice(bytes, 0));
+        let flags = Flags::from(splice(bytes, 4));
+        let delim_crc = bytes[7];
+        Self {
             reference,
             flags,
             delim_crc,
-        })
+        }
     }
 }
 
@@ -95,9 +92,11 @@ impl AmpduStatus {
 mod tests {
     use super::*;
 
+    use crate::hex::FromHex;
+
     #[test]
     fn basic() {
-        let ampdu_status = AmpduStatus::from_hex("631d030004000000").unwrap();
+        let ampdu_status = AmpduStatus::from_hex("631d030004000000");
         assert_eq!(
             ampdu_status,
             AmpduStatus {

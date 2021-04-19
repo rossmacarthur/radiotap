@@ -1,6 +1,6 @@
 //! Defines the Channel field.
 
-use crate::prelude::*;
+use crate::field::splice;
 
 impl_bitflags! {
     /// Flags describing the channel.
@@ -39,13 +39,11 @@ pub struct Channel {
     flags: Flags,
 }
 
-impl FromBytes for Channel {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let freq = bytes.read()?;
-        let flags = bytes.read()?;
-        Ok(Self { freq, flags })
+impl From<[u8; 4]> for Channel {
+    fn from(bytes: [u8; 4]) -> Self {
+        let freq = u16::from_le_bytes(splice(bytes, 0));
+        let flags = Flags::from(splice(bytes, 2));
+        Self { freq, flags }
     }
 }
 
@@ -65,10 +63,12 @@ impl Channel {
 mod tests {
     use super::*;
 
+    use crate::hex::FromHex;
+
     #[test]
     fn basic() {
         assert_eq!(
-            Channel::from_hex("9e098004").unwrap(),
+            Channel::from_hex("9e098004"),
             Channel {
                 freq: 2462,
                 flags: Flags::GHZ2 | Flags::DYNAMIC

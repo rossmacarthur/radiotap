@@ -52,18 +52,19 @@
 //! let rest = &capture[iter.length()..];
 //! ```
 
+mod bytes;
 mod error;
 pub mod field;
-mod prelude;
-mod util;
+mod hex;
 
 use std::error::Error as StdError;
 use std::fmt;
+use std::io;
 
+use crate::bytes::{Advance, Align, ReadExt};
 use crate::error::ResultExt;
 pub use crate::error::{Error, ErrorKind, Result};
 use crate::field::{Kind, Type, VendorNamespace};
-use crate::prelude::*;
 
 /// The radiotap header version.
 const VERSION: u8 = 0;
@@ -138,7 +139,7 @@ pub struct Field {
 #[derive(Debug, Clone)]
 pub struct Iter<'a> {
     /// The raw bytes in this capture.
-    bytes: Bytes<'a>,
+    bytes: io::Cursor<&'a [u8]>,
     /// The expected length of the entire capture.
     length: usize,
     /// The presence words in this capture.
@@ -231,10 +232,10 @@ impl<'a> Iter<'a> {
     /// there is not enough bytes in the capture for the length specified in the
     /// radiotap header.
     pub fn new(bytes: &'a [u8]) -> Result<Self> {
-        let mut bytes = Bytes::from_slice(bytes);
+        let mut bytes = io::Cursor::new(bytes);
 
         // the radiotap version, only 0 is supported
-        let version = bytes.read().context(ErrorKind::Header)?;
+        let version = bytes.read_u8().context(ErrorKind::Header)?;
         if version != VERSION {
             return Err(Error::new(ErrorKind::UnsupportedVersion(version)));
         }
@@ -243,12 +244,12 @@ impl<'a> Iter<'a> {
         bytes.advance(1).context(ErrorKind::Header)?;
 
         // the total length of the entire capture
-        let length = bytes.read::<u16>().context(ErrorKind::Header)?.into();
+        let length = bytes.read_u16_le().context(ErrorKind::Header)?.into();
 
         // the presence words
         let mut presence = Vec::new();
         loop {
-            let word = bytes.read().context(ErrorKind::Header)?;
+            let word = bytes.read_u32_le().context(ErrorKind::Header)?;
             presence.push(word);
             if word & (1 << PRESENCE_EXT) == 0 {
                 break;
@@ -315,8 +316,9 @@ impl<'a> Iter<'a> {
                             let context =
                                 || ErrorKind::Read(std::any::type_name::<VendorNamespace>());
                             self.bytes.align(2).with_context(context)?;
-                            self.namespace =
-                                Namespace::Vendor(self.bytes.read().with_context(context)?);
+                            self.namespace = Namespace::Vendor(
+                                self.bytes.read_array().with_context(context)?.into(),
+                            );
                             continue;
                         }
                         PRESENCE_EXT => {
@@ -351,28 +353,26 @@ impl<'a> Iter<'a> {
     }
 
     /// Reads the given kind of field.
-    pub fn read<T, U, E>(&mut self, kind: T) -> Result<U>
+    pub fn read<T, U, const N: usize>(&mut self, kind: T) -> Result<U>
     where
         T: Kind,
-        U: FromBytes<Error = E>,
-        E: Into<Box<dyn StdError + Send + Sync>>,
+        U: From<[u8; N]>,
     {
         let context = || ErrorKind::Read(std::any::type_name::<U>());
         self.bytes.align(kind.align()).with_context(context)?;
         let start_pos = self.bytes.position();
-        let field = U::from_bytes(&mut self.bytes).with_context(context)?;
+        let field = U::from(self.bytes.read_array().with_context(context)?);
         let end_pos = self.bytes.position();
-        if end_pos - start_pos != kind.size() {
+        if end_pos - start_pos != kind.size() as u64 {
             return Err(Error::new(context()));
         }
         Ok(field)
     }
 
-    fn read_some<T, U, E>(&mut self, kind: T) -> Result<Option<U>>
+    fn read_some<T, U, const N: usize>(&mut self, kind: T) -> Result<Option<U>>
     where
         T: Kind,
-        U: FromBytes<Error = E>,
-        E: Into<Box<dyn StdError + Send + Sync>>,
+        U: From<[u8; N]>,
     {
         self.read(kind).map(Some)
     }
@@ -420,19 +420,18 @@ impl IterDefault<'_> {
 
     /// Reads the given kind of field.
     #[inline]
-    pub fn read<U, E>(&mut self, kind: Type) -> Result<U>
+    pub fn read<U, E, const N: usize>(&mut self, kind: Type) -> Result<U>
     where
-        U: FromBytes<Error = E>,
+        U: From<[u8; N]>,
         E: Into<Box<dyn StdError + Send + Sync>>,
     {
         self.inner.read(kind)
     }
 
     #[inline]
-    fn read_some<U, E>(&mut self, kind: Type) -> Result<Option<U>>
+    fn read_some<U, const N: usize>(&mut self, kind: Type) -> Result<Option<U>>
     where
-        U: FromBytes<Error = E>,
-        E: Into<Box<dyn StdError + Send + Sync>>,
+        U: From<[u8; N]>,
     {
         self.inner.read_some(kind)
     }
@@ -583,7 +582,7 @@ mod tests {
         //         Vendor data length: 6
         //         Vendor data
 
-        let capture = hex::decode(
+        let capture = ::hex::decode(
             "000038006f0800c001000040040030309de59b040000000012308509\
              8004b4a7008700101800030002000000001018030600400002000000",
         )

@@ -5,7 +5,6 @@ use std::result;
 use thiserror::Error;
 
 use crate::field::{Fec, GuardInterval};
-use crate::prelude::*;
 
 #[rustfmt::skip]
 const RATE: [[f32; 4]; 32] = [
@@ -163,18 +162,16 @@ impl From<bool> for Format {
     }
 }
 
-impl FromBytes for Mcs {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let known = bytes.read()?;
-        let flags = bytes.read()?;
-        let index = bytes.read()?;
-        Ok(Self {
+impl From<[u8; 3]> for Mcs {
+    fn from(bytes: [u8; 3]) -> Self {
+        let known = Known::from(bytes[0]);
+        let flags = Flags::from(bytes[1]);
+        let index = bytes[2];
+        Self {
             known,
             flags,
             index,
-        })
+        }
     }
 }
 
@@ -265,10 +262,11 @@ mod tests {
     use super::*;
 
     use crate::assert_eq_f32;
+    use crate::hex::FromHex;
 
     #[test]
     fn basic() {
-        let mcs = Mcs::from_hex("1f0407").unwrap();
+        let mcs = Mcs::from_hex("1f0407");
         assert_eq!(
             mcs,
             Mcs {
@@ -289,7 +287,7 @@ mod tests {
 
     #[test]
     fn datarate() {
-        let mcs = Mcs::from_hex("1f140f").unwrap();
+        let mcs = Mcs::from_hex("1f140f");
         assert_eq_f32!(mcs.to_mbps().unwrap().unwrap(), 144.4);
     }
 }

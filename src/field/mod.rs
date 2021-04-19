@@ -5,10 +5,22 @@
 #[macro_use]
 mod _macros;
 
-use crate::prelude::*;
-
 /// An organizationally unique identifier.
 pub type Oui = [u8; 3];
+
+#[track_caller]
+fn splice<const M: usize, const N: usize>(arr: [u8; M], offset: usize) -> [u8; N] {
+    if offset + N > M {
+        panic!(
+            "array of length {} starting at {} is out \
+             of range for original array of length {}",
+            N, offset, M
+        );
+    }
+    let ptr = arr[offset..].as_ptr() as *const [u8; N];
+    // Safety: we checked that the length fits
+    unsafe { *ptr }
+}
 
 /////////////////////////////////////////////////////////////////////////
 // The type of radiotap field.
@@ -83,18 +95,16 @@ pub struct VendorNamespace {
     skip_length: u16,
 }
 
-impl FromBytes for VendorNamespace {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let oui = bytes.read()?;
-        let sub_ns = bytes.read()?;
-        let skip_length = bytes.read()?;
-        Ok(Self {
+impl From<[u8; 6]> for VendorNamespace {
+    fn from(bytes: [u8; 6]) -> Self {
+        let oui = splice(bytes, 0);
+        let sub_ns = bytes[3];
+        let skip_length = u16::from_le_bytes(splice(bytes, 4));
+        Self {
             oui,
             sub_ns,
             skip_length,
-        })
+        }
     }
 }
 
@@ -333,16 +343,14 @@ pub struct Fhss {
     hop_pattern: u8,
 }
 
-impl FromBytes for Fhss {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let hop_set = bytes.read()?;
-        let hop_pattern = bytes.read()?;
-        Ok(Self {
+impl From<[u8; 2]> for Fhss {
+    fn from(bytes: [u8; 2]) -> Self {
+        let hop_set = bytes[0];
+        let hop_pattern = bytes[1];
+        Self {
             hop_set,
             hop_pattern,
-        })
+        }
     }
 }
 
@@ -362,32 +370,15 @@ impl Fhss {
 mod tests {
     use super::*;
 
-    use std::fmt;
-
-    use frombytes::Bytes;
-
     #[test]
     fn every() {
-        fn check<U, E>(kind: Type) -> U
-        where
-            U: FromBytes<Error = E>,
-            E: fmt::Debug,
-        {
-            let vec = vec![0; kind.size()];
-            let mut bytes = Bytes::from_slice(vec.as_slice());
-            let result = U::from_bytes(&mut bytes).unwrap();
-            assert_eq!(
-                bytes.position(),
-                vec.len(),
-                "bad field: {}",
-                std::any::type_name::<U>()
-            );
-            result
+        fn check<U: From<[u8; N]>, const N: usize>() -> U {
+            U::from([0; N])
         }
 
         macro_rules! check {
             ($Field:ident) => {
-                let _field: $Field = check(Type::$Field);
+                let _field: $Field = check();
             };
         }
 

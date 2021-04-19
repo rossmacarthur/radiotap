@@ -90,17 +90,15 @@ macro_rules! impl_newtype {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
         pub struct $Field($ty);
 
-        impl frombytes::FromBytes for $Field {
-            type Error = frombytes::Error;
-
-            fn from_bytes(bytes: &mut frombytes::Bytes) -> frombytes::Result<Self> {
-                bytes.read().map(Self)
-            }
-        }
-
         impl From<$ty> for $Field {
             fn from(t: $ty) -> Self {
                 Self(t)
+            }
+        }
+
+        impl From<[u8; { std::mem::size_of::<$ty>() }]> for $Field {
+            fn from(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
+                Self(<$ty>::from_le_bytes(bytes))
             }
         }
 
@@ -134,11 +132,15 @@ macro_rules! impl_bitflags {
             }
         }
 
-        impl frombytes::FromBytes for $Field {
-            type Error = frombytes::Error;
+        impl From<$ty> for $Field {
+            fn from(t: $ty) -> Self {
+                Self::from_bits_truncate(t)
+            }
+        }
 
-            fn from_bytes(bytes: &mut frombytes::Bytes) -> frombytes::Result<Self> {
-                bytes.read().map(Self::from_bits_truncate)
+        impl From<[u8; { std::mem::size_of::<$ty>() }]> for $Field {
+            fn from(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
+                Self::from(<$ty>::from_le_bytes(bytes))
             }
         }
 

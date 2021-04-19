@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 use thiserror::Error;
 
-use crate::prelude::*;
+use crate::field::splice;
 
 /// An error returned when parsing a [`Unit`] from the raw bits in
 /// [`.unit()`][Timestamp::unit].
@@ -64,20 +64,18 @@ pub struct Timestamp {
     flags: Flags,
 }
 
-impl FromBytes for Timestamp {
-    type Error = Error;
-
-    fn from_bytes(bytes: &mut Bytes) -> Result<Self> {
-        let ts = bytes.read()?;
-        let accuracy = bytes.read()?;
-        let unit_position = bytes.read()?;
-        let flags = bytes.read()?;
-        Ok(Self {
+impl From<[u8; 12]> for Timestamp {
+    fn from(bytes: [u8; 12]) -> Self {
+        let ts = u64::from_le_bytes(splice(bytes, 0));
+        let accuracy = u16::from_le_bytes(splice(bytes, 8));
+        let unit_position = bytes[10];
+        let flags = Flags::from(splice(bytes, 10));
+        Self {
             ts,
             accuracy,
             unit_position,
             flags,
-        })
+        }
     }
 }
 
