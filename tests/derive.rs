@@ -1,7 +1,7 @@
-use radiotap::field::{Field, FromArray};
+use radiotap::field::{Field, FromArray, FromInto};
 
 #[test]
-fn derive_basic_struct() {
+fn derive_field_and_from_array_basic_struct() {
     #[derive(Debug, PartialEq, FromArray)]
     struct SubTest(i8);
 
@@ -29,7 +29,7 @@ fn derive_basic_struct() {
 }
 
 #[test]
-fn derive_new_type_struct() {
+fn derive_field_and_from_array_new_type_struct() {
     #[derive(Debug, PartialEq, FromArray)]
     struct SubTest(i8);
 
@@ -41,4 +41,12 @@ fn derive_new_type_struct() {
         Test::from_bytes([1, 2, 3, 4, 5, 6]),
         Test(1, 0x0302, [4, 5], (), SubTest(6))
     );
+}
+
+#[test]
+fn derive_from_into() {
+    #[derive(Debug, PartialEq, FromInto)]
+    struct Test(i8);
+    assert_eq!(Test::from(7i8), Test(7i8));
+    assert_eq!(i8::from(Test(7i8)), 7i8);
 }

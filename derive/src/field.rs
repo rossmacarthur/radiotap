@@ -1,3 +1,5 @@
+use std::env;
+
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::*;
@@ -20,9 +22,17 @@ fn derive_impl(input: &DeriveInput) -> Result<TokenStream> {
     let ty = &input.ident;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let Params { align, size } = parse_attr(input)?;
+
+    // This is that we can use the derive macros from within the crate.
+    let radiotap = if env::var("CARGO_CRATE_NAME").ok() == Some("radiotap".to_owned()) {
+        quote! { crate }
+    } else {
+        quote! { ::radiotap }
+    };
+
     Ok(quote! {
         #[automatically_derived]
-        impl #impl_generics ::radiotap::field::Field<#align, #size> for #ty #ty_generics
+        impl #impl_generics #radiotap::field::Field<#align, #size> for #ty #ty_generics
             #where_clause
         {
             #[inline]
