@@ -81,37 +81,6 @@ macro_rules! impl_enum {
     };
 }
 
-macro_rules! impl_newtype {
-    (
-        $(#[$outer:meta])*
-        pub struct $Field:ident($ty:ty);
-    ) => {
-        $(#[$outer])*
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-        pub struct $Field($ty);
-
-        impl From<$ty> for $Field {
-            fn from(t: $ty) -> Self {
-                Self(t)
-            }
-        }
-
-        impl From<[u8; { std::mem::size_of::<$ty>() }]> for $Field {
-            fn from(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
-                Self(<$ty>::from_le_bytes(bytes))
-            }
-        }
-
-        impl $Field {
-            /// Consumes this field and returns the underlying value.
-            #[inline]
-            pub const fn into_inner(self) -> $ty {
-                self.0
-            }
-        }
-    };
-}
-
 macro_rules! impl_bitflags {
     (
         $(#[$outer:meta])*
