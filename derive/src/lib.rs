@@ -3,7 +3,6 @@ mod macros;
 mod args;
 mod field;
 mod from_array;
-mod from_into;
 
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput, Error};
@@ -20,14 +19,6 @@ pub fn derive_field(input: TokenStream) -> TokenStream {
 pub fn derive_from_array(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     from_array::derive(&input)
-        .unwrap_or_else(Error::into_compile_error)
-        .into()
-}
-
-#[proc_macro_derive(FromInto)]
-pub fn derive_from_into(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    from_into::derive(&input)
         .unwrap_or_else(Error::into_compile_error)
         .into()
 }

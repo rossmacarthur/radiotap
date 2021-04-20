@@ -191,9 +191,9 @@ pub use crate::field::xchannel::XChannel;
 /// Value in microseconds of the MAC’s 64-bit 802.11 Time Synchronization
 /// Function Timer when the first bit of the MPDU arrived at the MAC. For
 /// received frames only.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 8, size = 8)]
-pub struct Tsft(u64);
+pub struct Tsft(pub u64);
 
 /// Tx/Rx legacy data rate.
 ///
@@ -201,9 +201,9 @@ pub struct Tsft(u64);
 ///
 /// The raw value's unit is 500 Kbps. Use the [`.to_mbps()`][Rate::to_mbps]
 /// method to get the rate in megabits per second.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct Rate(u8);
+pub struct Rate(pub u8);
 
 impl Rate {
     /// Returns the data rate in megabits per second.
@@ -216,72 +216,72 @@ impl Rate {
 ///
 /// It indicates the RF signal power at the antenna, in decibels difference from
 /// one milliwatt.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct AntennaSignal(i8);
+pub struct AntennaSignal(pub i8);
 
 /// RF signal power at the antenna in dB.
 ///
 /// It indicates the RF signal power at the antenna, in decibels difference from
 /// an arbitrary, fixed reference.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct AntennaSignalDb(u8);
+pub struct AntennaSignalDb(pub u8);
 
 /// RF noise power at the antenna in dBm.
 ///
 /// It indicates the RF signal noise at the antenna, in decibels difference from
 /// one milliwatt.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct AntennaNoise(i8);
+pub struct AntennaNoise(pub i8);
 
 /// RF noise power at the antenna in dB.
 ///
 /// It indicates the RF signal noise at the antenna, in decibels difference from
 /// an arbitrary, fixed reference.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct AntennaNoiseDb(u8);
+pub struct AntennaNoiseDb(pub u8);
 
 /// Quality of Barker code lock, unitless.
 ///
 /// Monotonically nondecreasing with "better" lock strength. Called "Signal
 /// Quality" in datasheets.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 2, size = 2)]
-pub struct LockQuality(u16);
+pub struct LockQuality(pub u16);
 
 /// Transmit power expressed as unitless distance from max power.
 ///
 /// Zero is max power. Monotonically nondecreasing with lower power levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 2, size = 2)]
-pub struct TxAttenuation(u16);
+pub struct TxAttenuation(pub u16);
 
 /// Transmit power expressed as decibel distance from max power set at factory
 /// calibration.
 ///
 /// Zero is max power. Monotonically nondecreasing with lower power levels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 2, size = 2)]
-pub struct TxAttenuationDb(u16);
+pub struct TxAttenuationDb(pub u16);
 
 /// Transmit power in dBm.
 ///
 /// This is the absolute power level measured at the antenna port in decibels
 /// difference from one milliwatt.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct TxPower(i8);
+pub struct TxPower(pub i8);
 
 /// The antenna index.
 ///
 /// Unitless indication of the Rx/Tx antenna for this packet. The first antenna
 /// is antenna zero.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromInto, FromArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
 #[field(align = 1, size = 1)]
-pub struct Antenna(u8);
+pub struct Antenna(pub u8);
 
 impl_bitflags! {
     /// Flags describing transmitted and received frames.
@@ -332,21 +332,11 @@ impl_bitflags! {
 }
 
 /// The hop set and pattern for frequency-hopping radios.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 2, size = 2)]
 pub struct Fhss {
     hop_set: u8,
     hop_pattern: u8,
-}
-
-impl From<[u8; 2]> for Fhss {
-    fn from(bytes: [u8; 2]) -> Self {
-        let hop_set = bytes[0];
-        let hop_pattern = bytes[1];
-        Self {
-            hop_set,
-            hop_pattern,
-        }
-    }
 }
 
 impl Fhss {

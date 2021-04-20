@@ -42,11 +42,3 @@ fn derive_field_and_from_array_new_type_struct() {
         Test(1, 0x0302, [4, 5], (), SubTest(6))
     );
 }
-
-#[test]
-fn derive_from_into() {
-    #[derive(Debug, PartialEq, FromInto)]
-    struct Test(i8);
-    assert_eq!(Test::from(7i8), Test(7i8));
-    assert_eq!(i8::from(Test(7i8)), 7i8);
-}
