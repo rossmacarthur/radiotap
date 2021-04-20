@@ -1,8 +1,8 @@
 //! Defines the A-MPDU Status field.
 
-use crate::field::splice;
+use crate::field::{Field, FromArray};
 
-impl_bitflags! {
+bitflags! {
     /// Flags describing the A-MPDU.
     pub struct Flags: u16 {
         /// Driver reports 0-length subframes.
@@ -25,27 +25,18 @@ impl_bitflags! {
 }
 
 /// Indicates that the frame was received as part of an A-MPDU.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 4, size = 8)]
 pub struct AmpduStatus {
     /// The A-MPDU reference number.
     reference: u32,
     /// The A-AMPDU flags.
+    #[field(size = 2)]
     flags: Flags,
     /// The A-MPDU subframe delimiter CRC.
     delim_crc: u8,
-}
-
-impl From<[u8; 8]> for AmpduStatus {
-    fn from(bytes: [u8; 8]) -> Self {
-        let reference = u32::from_le_bytes(splice(bytes, 0));
-        let flags = Flags::from(splice(bytes, 4));
-        let delim_crc = bytes[7];
-        Self {
-            reference,
-            flags,
-            delim_crc,
-        }
-    }
+    // FIXME: make the derive macro not require this.
+    _reserved: u8,
 }
 
 impl AmpduStatus {

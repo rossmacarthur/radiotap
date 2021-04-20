@@ -1,8 +1,8 @@
 //! Defines the Channel field.
 
-use crate::field::splice;
+use crate::field::{Field, FromArray};
 
-impl_bitflags! {
+bitflags! {
     /// Flags describing the channel.
     pub struct Flags: u16 {
         /// Turbo channel.
@@ -33,18 +33,12 @@ impl_bitflags! {
 }
 
 /// Channel information.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 2, size = 4)]
 pub struct Channel {
     freq: u16,
+    #[field(size = 2)]
     flags: Flags,
-}
-
-impl From<[u8; 4]> for Channel {
-    fn from(bytes: [u8; 4]) -> Self {
-        let freq = u16::from_le_bytes(splice(bytes, 0));
-        let flags = Flags::from(splice(bytes, 2));
-        Self { freq, flags }
-    }
 }
 
 impl Channel {

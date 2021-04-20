@@ -1,8 +1,8 @@
 //! Defines the XChannel field.
 
-use crate::field::splice;
+use crate::field::{Field, FromArray};
 
-impl_bitflags! {
+bitflags! {
     /// Extended flags describing the channel.
     pub struct Flags: u32 {
         /// Turbo channel.
@@ -39,24 +39,15 @@ impl_bitflags! {
 }
 
 /// Extended channel information.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 4, size = 8)]
 pub struct XChannel {
+    #[field(size = 4)]
     flags: Flags,
     freq: u16,
     channel: u8,
-}
-
-impl From<[u8; 8]> for XChannel {
-    fn from(bytes: [u8; 8]) -> Self {
-        let flags = Flags::from(splice(bytes, 0));
-        let freq = u16::from_le_bytes(splice(bytes, 4));
-        let channel = bytes[7];
-        Self {
-            flags,
-            freq,
-            channel,
-        }
-    }
+    // FIXME: make the derive macro not require this.
+    _reserved: u8,
 }
 
 impl XChannel {

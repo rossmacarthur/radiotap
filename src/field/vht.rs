@@ -6,7 +6,7 @@ use std::result;
 use thiserror::Error;
 
 use crate::field::mcs;
-use crate::field::{splice, Fec, GuardInterval};
+use crate::field::{Fec, Field, FromArray, GuardInterval};
 
 #[rustfmt::skip]
 const RATE: [[f32; 8]; 80] = [
@@ -168,7 +168,7 @@ impl_enum! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Indicates what VHT information is known.
     pub struct Known: u16 {
         /// The space-time block coding (STBC) information is known.
@@ -192,7 +192,7 @@ impl_bitflags! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Flags describing the VHT information.
     pub struct Flags: u8 {
         /// Endodes the space-time block coding (STBC).
@@ -227,9 +227,12 @@ pub struct User<'a> {
 /// The IEEE 802.11ac data rate index.
 ///
 /// Other rate fields: [`Rate`][super::Rate], [`Mcs`][super::Mcs]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 2, size = 12)]
 pub struct Vht {
+    #[field(size = 2)]
     known: Known,
+    #[field(size = 1)]
     flags: Flags,
     bandwidth: u8,
     mcs_nss: [u8; 4],
@@ -333,27 +336,6 @@ impl User<'_> {
             return Some(Err(InvalidDatarateKind::Mismatch.into()));
         }
         Some(Ok(rate))
-    }
-}
-
-impl From<[u8; 12]> for Vht {
-    fn from(bytes: [u8; 12]) -> Self {
-        let known = Known::from(splice(bytes, 0));
-        let flags = Flags::from(bytes[2]);
-        let bandwidth = bytes[3];
-        let mcs_nss = splice(bytes, 4);
-        let coding = bytes[8];
-        let group_id = bytes[9];
-        let partial_aid = u16::from_le_bytes(splice(bytes, 10));
-        Self {
-            known,
-            flags,
-            bandwidth,
-            mcs_nss,
-            coding,
-            group_id,
-            partial_aid,
-        }
     }
 }
 

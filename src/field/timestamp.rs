@@ -6,7 +6,7 @@ use std::time::SystemTime;
 
 use thiserror::Error;
 
-use crate::field::splice;
+use crate::field::{Field, FromArray};
 
 /// An error returned when parsing a [`Unit`] from the raw bits in
 /// [`.unit()`][Timestamp::unit].
@@ -45,7 +45,7 @@ impl_enum! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     // Flags describing the timestamp.
     pub struct Flags: u8 {
         /// 32-bit counter.
@@ -56,27 +56,14 @@ impl_bitflags! {
 }
 
 /// The time the frame was transmitted or received.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 8, size = 12)]
 pub struct Timestamp {
     ts: u64,
     accuracy: u16,
     unit_position: u8,
+    #[field(size = 1)]
     flags: Flags,
-}
-
-impl From<[u8; 12]> for Timestamp {
-    fn from(bytes: [u8; 12]) -> Self {
-        let ts = u64::from_le_bytes(splice(bytes, 0));
-        let accuracy = u16::from_le_bytes(splice(bytes, 8));
-        let unit_position = bytes[10];
-        let flags = Flags::from(splice(bytes, 10));
-        Self {
-            ts,
-            accuracy,
-            unit_position,
-            flags,
-        }
-    }
 }
 
 impl Unit {

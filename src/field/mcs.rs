@@ -4,7 +4,7 @@ use std::result;
 
 use thiserror::Error;
 
-use crate::field::{Fec, GuardInterval};
+use crate::field::{Fec, Field, FromArray, GuardInterval};
 
 #[rustfmt::skip]
 const RATE: [[f32; 4]; 32] = [
@@ -74,7 +74,7 @@ impl_enum! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Indicates what MCS information is known.
     pub struct Known: u8 {
         /// The bandwidth is known.
@@ -96,7 +96,7 @@ impl_bitflags! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Flags describing the MCS information.
     pub struct Flags: u8 {
         /// Encodes the bandwidth (bit 0).
@@ -131,11 +131,14 @@ const NESS_BIT_0_SHIFT: u8 = 5;
 /// The IEEE 802.11n data rate index.
 ///
 /// Other rate fields: [`Rate`][super::Rate], [`Vht`][super::Vht]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Field, FromArray)]
+#[field(align = 1, size = 3)]
 pub struct Mcs {
     /// Indicates which information is known.
+    #[field(size = 1)]
     known: Known,
     /// Contains various encoded information.
+    #[field(size = 1)]
     flags: Flags,
     /// The MCS index.
     index: u8,
@@ -158,19 +161,6 @@ impl From<bool> for Format {
         match b {
             false => Self::Mixed,
             true => Self::Greenfield,
-        }
-    }
-}
-
-impl From<[u8; 3]> for Mcs {
-    fn from(bytes: [u8; 3]) -> Self {
-        let known = Known::from(bytes[0]);
-        let flags = Flags::from(bytes[1]);
-        let index = bytes[2];
-        Self {
-            known,
-            flags,
-            index,
         }
     }
 }

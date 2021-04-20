@@ -10,20 +10,6 @@ pub use radiotap_derive::*;
 /// An organizationally unique identifier.
 pub type Oui = [u8; 3];
 
-#[track_caller]
-fn splice<const M: usize, const N: usize>(arr: [u8; M], offset: usize) -> [u8; N] {
-    if offset + N > M {
-        panic!(
-            "array of length {} starting at {} is out \
-             of range for original array of length {}",
-            N, offset, M
-        );
-    }
-    let ptr = arr[offset..].as_ptr() as *const [u8; N];
-    // Safety: we checked that the length fits
-    unsafe { *ptr }
-}
-
 /////////////////////////////////////////////////////////////////////////
 // The type of radiotap field.
 /////////////////////////////////////////////////////////////////////////
@@ -283,8 +269,10 @@ pub struct TxPower(pub i8);
 #[field(align = 1, size = 1)]
 pub struct Antenna(pub u8);
 
-impl_bitflags! {
+bitflags! {
     /// Flags describing transmitted and received frames.
+    #[derive(Field)]
+    #[field(align = 1, size = 1)]
     pub struct Flags: u8 {
         /// The frame was sent/received during CFP.
         const CFP = 0x01;
@@ -305,16 +293,20 @@ impl_bitflags! {
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Properties of received frames.
+    #[derive(Field)]
+    #[field(align = 2, size = 2)]
     pub struct RxFlags: u16 {
         /// PLCP CRC check failed.
         const BAD_PLCP = 0x0002;
     }
 }
 
-impl_bitflags! {
+bitflags! {
     /// Properties of transmitted frames.
+    #[derive(Field)]
+    #[field(align = 2, size = 2)]
     pub struct TxFlags: u16 {
         /// Transmission failed due to excessive retries.
         const FAIL = 0x0001;

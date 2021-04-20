@@ -81,7 +81,7 @@ macro_rules! impl_enum {
     };
 }
 
-macro_rules! impl_bitflags {
+macro_rules! bitflags {
     (
         $(#[$outer:meta])*
         pub struct $Field:ident: $ty:ty {
@@ -110,14 +110,6 @@ macro_rules! impl_bitflags {
         impl From<[u8; { std::mem::size_of::<$ty>() }]> for $Field {
             fn from(bytes: [u8; { std::mem::size_of::<$ty>() }]) -> Self {
                 Self::from(<$ty>::from_le_bytes(bytes))
-            }
-        }
-
-        impl $Field {
-            /// Consumes this field and returns the underlying value.
-            #[inline]
-            pub const fn into_inner(self) -> $ty {
-                self.bits
             }
         }
     };
