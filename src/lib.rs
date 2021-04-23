@@ -53,7 +53,6 @@
 //! ```
 
 mod bytes;
-mod error;
 pub mod field;
 mod hex;
 
@@ -62,8 +61,6 @@ use std::fmt;
 use std::io;
 
 use crate::bytes::{Advance, Align, ReadExt};
-use crate::error::ResultExt;
-pub use crate::error::{Error, ErrorKind, Result};
 use crate::field::{Kind, Type, VendorNamespace};
 
 /// The radiotap header version.
@@ -231,25 +228,28 @@ impl<'a> Iter<'a> {
     /// This function will error if the radiotap version is unsupported or if
     /// there is not enough bytes in the capture for the length specified in the
     /// radiotap header.
-    pub fn new(bytes: &'a [u8]) -> Result<Self> {
+    pub fn new(bytes: &'a [u8]) -> io::Result<Self> {
         let mut bytes = io::Cursor::new(bytes);
 
         // the radiotap version, only 0 is supported
-        let version = bytes.read_u8().context(ErrorKind::Header)?;
+        let version = bytes.read_u8()?;
         if version != VERSION {
-            return Err(Error::new(ErrorKind::UnsupportedVersion(version)));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "unsupported version",
+            ));
         }
 
         // padding byte
-        bytes.advance(1).context(ErrorKind::Header)?;
+        bytes.advance(1)?;
 
         // the total length of the entire capture
-        let length = bytes.read_u16_le().context(ErrorKind::Header)?.into();
+        let length = bytes.read_u16_le()?.into();
 
         // the presence words
         let mut presence = Vec::new();
         loop {
-            let word = bytes.read_u32_le().context(ErrorKind::Header)?;
+            let word = bytes.read_u32_le()?;
             presence.push(word);
             if word & (1 << PRESENCE_EXT) == 0 {
                 break;
@@ -293,7 +293,7 @@ impl<'a> Iter<'a> {
 
     /// Returns the next field in the iterator.
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<Option<Field>> {
+    pub fn next(&mut self) -> io::Result<Option<Field>> {
         loop {
             match self.presence.get((self.position / 32) as usize) {
                 Some(presence) => {
@@ -313,12 +313,8 @@ impl<'a> Iter<'a> {
                         }
                         PRESENCE_VENDOR_NAMESPACE => {
                             // switching to vendor namespace
-                            let context =
-                                || ErrorKind::Read(std::any::type_name::<VendorNamespace>());
-                            self.bytes.align(2).with_context(context)?;
-                            self.namespace = Namespace::Vendor(
-                                self.bytes.read_array().with_context(context)?.into(),
-                            );
+                            self.bytes.align(2)?;
+                            self.namespace = Namespace::Vendor(self.bytes.read_array()?.into());
                             continue;
                         }
                         PRESENCE_EXT => {
@@ -339,37 +335,31 @@ impl<'a> Iter<'a> {
     }
 
     /// Skip the given kind of field.
-    pub fn skip<T: Kind>(&mut self, kind: T) -> Result<()> {
-        self.bytes.align(kind.align()).context(ErrorKind::Skip)?;
-        self.bytes.advance(kind.size()).context(ErrorKind::Skip)?;
+    pub fn skip<T: Kind>(&mut self, kind: T) -> io::Result<()> {
+        self.bytes.align(kind.align())?;
+        self.bytes.advance(kind.size())?;
         Ok(())
     }
 
     /// Skip the given vendor namespace.
-    pub fn skip_vns(&mut self, vns: &VendorNamespace) -> Result<()> {
-        self.bytes
-            .advance(vns.skip_length())
-            .context(ErrorKind::Skip)
+    pub fn skip_vns(&mut self, vns: &VendorNamespace) -> io::Result<()> {
+        self.bytes.advance(vns.skip_length())
     }
 
     /// Reads the given kind of field.
-    pub fn read<T, U, const N: usize>(&mut self, kind: T) -> Result<U>
+    pub fn read<T, U, const N: usize>(&mut self, kind: T) -> io::Result<U>
     where
         T: Kind,
         U: From<[u8; N]>,
     {
-        let context = || ErrorKind::Read(std::any::type_name::<U>());
-        self.bytes.align(kind.align()).with_context(context)?;
-        let start_pos = self.bytes.position();
-        let field = U::from(self.bytes.read_array().with_context(context)?);
-        let end_pos = self.bytes.position();
-        if end_pos - start_pos != kind.size() as u64 {
-            return Err(Error::new(context()));
-        }
+        assert!(kind.size() >= N);
+        self.bytes.align(kind.align())?;
+        let field = U::from(self.bytes.read_array()?);
+        self.bytes.advance(kind.size() - N)?;
         Ok(field)
     }
 
-    fn read_some<T, U, const N: usize>(&mut self, kind: T) -> Result<Option<U>>
+    fn read_some<T, U, const N: usize>(&mut self, kind: T) -> io::Result<Option<U>>
     where
         T: Kind,
         U: From<[u8; N]>,
@@ -393,7 +383,7 @@ impl IterDefault<'_> {
 
     /// Returns the next field type in the iterator.
     #[allow(clippy::should_implement_trait)]
-    pub fn next(&mut self) -> Result<Option<Type>> {
+    pub fn next(&mut self) -> io::Result<Option<Type>> {
         match self.inner.next()? {
             Some(Field {
                 namespace: Namespace::Default,
@@ -414,13 +404,13 @@ impl IterDefault<'_> {
 
     /// Skip the given kind of field.
     #[inline]
-    pub fn skip(&mut self, kind: Type) -> Result<()> {
+    pub fn skip(&mut self, kind: Type) -> io::Result<()> {
         self.inner.skip(kind)
     }
 
     /// Reads the given kind of field.
     #[inline]
-    pub fn read<U, E, const N: usize>(&mut self, kind: Type) -> Result<U>
+    pub fn read<U, E, const N: usize>(&mut self, kind: Type) -> io::Result<U>
     where
         U: From<[u8; N]>,
         E: Into<Box<dyn StdError + Send + Sync>>,
@@ -429,7 +419,7 @@ impl IterDefault<'_> {
     }
 
     #[inline]
-    fn read_some<U, const N: usize>(&mut self, kind: Type) -> Result<Option<U>>
+    fn read_some<U, const N: usize>(&mut self, kind: Type) -> io::Result<Option<U>>
     where
         U: From<[u8; N]>,
     {
@@ -438,7 +428,7 @@ impl IterDefault<'_> {
 }
 
 /// Parse a radiotap header from the given capture.
-pub fn parse(capture: &[u8]) -> Result<Header> {
+pub fn parse(capture: &[u8]) -> io::Result<Header> {
     let mut iter = Iter::new(capture)?.into_default();
     let mut radiotap = Header {
         length: iter.length(),
