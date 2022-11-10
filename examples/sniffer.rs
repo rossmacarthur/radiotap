@@ -29,7 +29,7 @@ fn main() {
     // Print out the first 100 Radiotap headers of packets
     while count < 100 {
         // Get a packet from the interface
-        match cap.next() {
+        match cap.next_packet() {
             // We captured a packet
             Ok(packet) => {
                 // Parse the radiotap header of the packet

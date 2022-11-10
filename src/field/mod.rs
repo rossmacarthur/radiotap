@@ -8,7 +8,7 @@ use std::io::{Cursor, Read};
 
 use crate::{field::ext::*, Error, Result};
 
-type OUI = [u8; 3];
+type Oui = [u8; 3];
 
 /// The type of Radiotap field.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -218,7 +218,7 @@ impl Field for Header {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct VendorNamespace {
-    pub oui: OUI,
+    pub oui: Oui,
     pub sub_namespace: u8,
     pub skip_length: u16,
 }
@@ -678,7 +678,7 @@ impl Field for MCS {
 
 /// The presence of this field indicates that the frame was received as part of
 /// an a-MPDU.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AMPDUStatus {
     /// The A-MPDU reference number.
     pub reference: u32,

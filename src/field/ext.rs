@@ -135,7 +135,7 @@ pub fn ht_rate(index: u8, bw: Bandwidth, gi: GuardInterval) -> Result<f32> {
         _ => return Err(Error::InvalidFormat),
     };
 
-    let col = b + (if gi == GuardInterval::Short { 1 } else { 0 });
+    let col = b + usize::from(gi == GuardInterval::Short);
 
     Ok(HT_RATE[index as usize][col])
 }
@@ -155,7 +155,7 @@ pub fn vht_rate(index: u8, bw: Bandwidth, gi: GuardInterval, nss: u8) -> Result<
         _ => return Err(Error::InvalidFormat),
     };
 
-    let col = b + (if gi == GuardInterval::Short { 1 } else { 0 });
+    let col = b + usize::from(gi == GuardInterval::Short);
     let row = index + (nss - 1) * 10;
 
     let rate = VHT_RATE[row as usize][col];
