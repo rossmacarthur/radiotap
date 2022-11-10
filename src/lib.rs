@@ -49,41 +49,34 @@ pub mod field;
 
 use std::{io::Cursor, result};
 
-use quick_error::quick_error;
-
 use crate::field::*;
 
-quick_error! {
-    /// All errors returned and used by the radiotap module.
-    #[derive(Debug)]
-    pub enum Error {
-        /// The internal cursor on the data returned an IO error.
-        ParseError(err: std::io::Error) {
-            from()
-            source(err)
-            description(err.description())
-        }
-        /// The given data is not a complete Radiotap capture.
-        IncompleteError {
-            display("The given data is not a complete Radiotap capture")
-        }
-        /// The given data is shorter than the amount specified in the Radiotap header.
-        InvalidLength {
-            display("The given data is shorter than the amount specified in the Radiotap header")
-        }
-        /// The given data is not a valid Radiotap capture.
-        InvalidFormat {
-            display("The given data is not a valid Radiotap capture")
-        }
-        /// Unsupported Radiotap header version.
-        UnsupportedVersion {
-            display("Unsupported Radiotap header version")
-        }
-        /// Unsupported Radiotap field.
-        UnsupportedField {
-            display("Unsupported Radiotap field")
-        }
-    }
+/// All errors returned and used by the radiotap module.
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    /// The internal cursor on the data returned an IO error.
+    #[error(transparent)]
+    ParseError(#[from] std::io::Error),
+
+    /// The given data is not a complete Radiotap capture.
+    #[error("incomplete radiotap capture")]
+    IncompleteError,
+
+    /// The given data is shorter than the amount specified in the Radiotap header.
+    #[error("invalid radiotap length")]
+    InvalidLength,
+
+    /// The given data is not a valid Radiotap capture.
+    #[error("invalid radiotap capture")]
+    InvalidFormat,
+
+    /// Unsupported Radiotap header version.
+    #[error("unsupported radiotap header version")]
+    UnsupportedVersion,
+
+    /// Unsupported Radiotap field.
+    #[error("unsupported radiotap field")]
+    UnsupportedField,
 }
 
 type Result<T> = result::Result<T, Error>;
